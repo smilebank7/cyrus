@@ -70,6 +70,7 @@ import {
 } from "cyrus-core";
 import { CursorRunner } from "cyrus-cursor-runner";
 import { GeminiRunner } from "cyrus-gemini-runner";
+import { OpenCodeRunner } from "cyrus-opencode-runner";
 import {
 	extractCommentAuthor,
 	extractCommentBody,
@@ -227,9 +228,9 @@ export class EdgeWorker extends EventEmitter {
 		// Default to claude runner
 		this.procedureAnalyzer = new ProcedureAnalyzer({
 			cyrusHome: this.cyrusHome,
-			model: "haiku",
+			model: "gemini-2.5-flash-lite",
 			timeoutMs: 100000,
-			runnerType: "claude", // Use Claude by default
+			runnerType: "gemini",
 		});
 
 		// Initialize repository router with dependencies
@@ -2899,13 +2900,15 @@ ${taskInstructions}
 			);
 
 			const runner =
-				runnerType === "claude"
-					? new ClaudeRunner(runnerConfig)
-					: runnerType === "gemini"
-						? new GeminiRunner(runnerConfig)
-						: runnerType === "codex"
-							? new CodexRunner(runnerConfig)
-							: new CursorRunner(runnerConfig);
+				runnerType === "opencode"
+					? new OpenCodeRunner(runnerConfig)
+					: runnerType === "claude"
+						? new ClaudeRunner(runnerConfig)
+						: runnerType === "gemini"
+							? new GeminiRunner(runnerConfig)
+							: runnerType === "codex"
+								? new CodexRunner(runnerConfig)
+								: new CursorRunner(runnerConfig);
 
 			// Store runner by comment ID
 			agentSessionManager.addAgentRunner(sessionId, runner);
@@ -3505,7 +3508,7 @@ ${taskInstructions}
 	 * Supports legacy config keys for backwards compatibility.
 	 */
 	private getDefaultModelForRunner(
-		runnerType: "claude" | "gemini" | "codex" | "cursor",
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode",
 	): string {
 		return this.runnerSelectionService.getDefaultModelForRunner(runnerType);
 	}
@@ -3515,7 +3518,7 @@ ${taskInstructions}
 	 * Supports legacy Claude fallback key for backwards compatibility.
 	 */
 	private getDefaultFallbackModelForRunner(
-		runnerType: "claude" | "gemini" | "codex" | "cursor",
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode",
 	): string {
 		return this.runnerSelectionService.getDefaultFallbackModelForRunner(
 			runnerType,
@@ -3538,7 +3541,7 @@ ${taskInstructions}
 		labels: string[],
 		issueDescription?: string,
 	): {
-		runnerType: "claude" | "gemini" | "codex" | "cursor";
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode";
 		modelOverride?: string;
 		fallbackModelOverride?: string;
 	} {
@@ -4643,7 +4646,7 @@ ${input.userComment}
 		disallowAllTools?: boolean,
 	): {
 		config: AgentRunnerConfig;
-		runnerType: "claude" | "gemini" | "codex" | "cursor";
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode";
 	} {
 		const log = this.logger.withContext({
 			sessionId,
@@ -4764,6 +4767,10 @@ ${input.userComment}
 			runnerType = "cursor";
 			modelOverride = this.getDefaultModelForRunner("cursor");
 			fallbackModelOverride = this.getDefaultFallbackModelForRunner("cursor");
+		} else if (session.openCodeSessionId && runnerType !== "opencode") {
+			runnerType = "opencode";
+			modelOverride = this.getDefaultModelForRunner("opencode");
+			fallbackModelOverride = this.getDefaultFallbackModelForRunner("opencode");
 		}
 
 		// Log model override if found
@@ -4854,6 +4861,11 @@ ${input.userComment}
 			// Expected cursor-agent version for pre-run validation; mismatch posts error to Linear
 			(config as any).cursorAgentVersion =
 				process.env.CYRUS_CURSOR_AGENT_VERSION || undefined;
+		}
+
+		// OpenCode runner-specific wiring
+		if (runnerType === "opencode") {
+			(config as any).autoApprove = true;
 		}
 
 		if (resumeSessionId) {
@@ -5578,7 +5590,9 @@ ${input.userComment}
 					? session.geminiSessionId
 					: session.codexSessionId
 						? session.codexSessionId
-						: session.cursorSessionId;
+						: session.cursorSessionId
+							? session.cursorSessionId
+							: session.openCodeSessionId;
 
 		console.log(
 			`[resumeAgentSession] needsNewSession=${needsNewSession}, resumeSessionId=${resumeSessionId ?? "none"}`,
@@ -5605,13 +5619,15 @@ ${input.userComment}
 
 		// Create the appropriate runner based on session state
 		const runner =
-			runnerType === "claude"
-				? new ClaudeRunner(runnerConfig)
-				: runnerType === "gemini"
-					? new GeminiRunner(runnerConfig)
-					: runnerType === "codex"
-						? new CodexRunner(runnerConfig)
-						: new CursorRunner(runnerConfig);
+			runnerType === "opencode"
+				? new OpenCodeRunner(runnerConfig)
+				: runnerType === "claude"
+					? new ClaudeRunner(runnerConfig)
+					: runnerType === "gemini"
+						? new GeminiRunner(runnerConfig)
+						: runnerType === "codex"
+							? new CodexRunner(runnerConfig)
+							: new CursorRunner(runnerConfig);
 
 		// Store runner
 		agentSessionManager.addAgentRunner(sessionId, runner);

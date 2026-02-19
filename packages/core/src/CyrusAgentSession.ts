@@ -64,6 +64,7 @@ export interface CyrusAgentSession {
 	geminiSessionId?: string; // Gemini-specific session ID (assigned once it initializes)
 	codexSessionId?: string; // Codex-specific session ID (assigned once it initializes)
 	cursorSessionId?: string; // Cursor-specific session ID (assigned once it initializes)
+	openCodeSessionId?: string; // OpenCode-specific session ID (assigned once it initializes)
 	agentRunner?: IAgentRunner;
 	metadata?: {
 		model?: string;
@@ -83,6 +84,7 @@ export interface CyrusAgentSession {
 				geminiSessionId: string | null;
 				codexSessionId?: string | null;
 				cursorSessionId?: string | null;
+				openCodeSessionId?: string | null;
 			}>;
 			/** State for validation loop (when current subroutine uses usesValidationLoop) */
 			validationLoop?: {
@@ -107,6 +109,7 @@ export interface CyrusAgentSessionEntry {
 	geminiSessionId?: string; // originated in this Gemini session (if using Gemini)
 	codexSessionId?: string; // originated in this Codex session (if using Codex)
 	cursorSessionId?: string; // originated in this Cursor session (if using Cursor)
+	openCodeSessionId?: string; // originated in this OpenCode session (if using OpenCode)
 	linearAgentActivityId?: string; // got assigned this ID in linear, after creation, for this 'agent activity'
 	type: "user" | "assistant" | "system" | "result";
 	content: string;

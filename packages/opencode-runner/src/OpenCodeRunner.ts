@@ -10,6 +10,7 @@
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
+import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
 import { createWriteStream, mkdirSync, type WriteStream } from "node:fs";
 import { join } from "node:path";
@@ -134,33 +135,24 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 				: "opencode";
 			const args: string[] = ["run", "--format", "json"];
 
-			// Add model if specified
+			// Add model if specified (opencode CLI uses "provider/model" format)
 			if (this.config.model) {
-				args.push("--model", this.config.model);
+				// If providerId is set, combine as "provider/model"
+				if (this.config.providerId && !this.config.model.includes("/")) {
+					args.push("--model", `${this.config.providerId}/${this.config.model}`);
+				} else {
+					args.push("--model", this.config.model);
+				}
+			} else if (this.config.providerId) {
+				// Default to anthropic/claude-sonnet-4-20250514 if only provider is set
+				args.push("--model", `${this.config.providerId}/claude-sonnet-4-20250514`);
 			}
 
-			// Add provider if specified
-			if (this.config.providerId) {
-				args.push("--provider", this.config.providerId);
-			}
+			// Note: opencode CLI 1.x does not support --auto-approve, --system-prompt, --max-turns
+			// These are handled via opencode config or ignored
 
-			// Add auto-approve
-			if (this.config.autoApprove) {
-				args.push("--auto-approve");
-			}
-
-			// Add system prompt
-			if (this.config.appendSystemPrompt) {
-				args.push("--system-prompt", this.config.appendSystemPrompt);
-			}
-
-			// Add max turns
-			if (this.config.maxTurns) {
-				args.push("--max-turns", String(this.config.maxTurns));
-			}
-
-			// Add the prompt
-			args.push("--prompt", prompt);
+			// Add the prompt as positional argument (opencode CLI uses positional args, not --prompt)
+			args.push(prompt);
 
 			// Prepare environment
 			const env = { ...process.env };
@@ -320,13 +312,32 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			JSON.stringify(event).substring(0, 200),
 		);
 
-		// Extract session ID
 		const sessionId = extractSessionId(event);
 		if (sessionId && this.sessionInfo && !this.sessionInfo.sessionId) {
 			this.sessionInfo.sessionId = sessionId;
 			this.sessionInfo.openCodeSessionId = sessionId;
 			console.log(`[OpenCodeRunner] Session ID assigned: ${sessionId}`);
 			this.setupLogging();
+
+			const systemInitMessage: SDKMessage = {
+				type: "system",
+				subtype: "init",
+				agents: undefined,
+				apiKeySource: "user",
+				claude_code_version: "opencode-adapter",
+				cwd: this.config.workingDirectory || process.cwd(),
+				tools: [],
+				mcp_servers: [],
+				model: this.config.model || "anthropic/claude-sonnet-4-20250514",
+				permissionMode: "default",
+				slash_commands: [],
+				output_style: "default",
+				skills: [],
+				plugins: [],
+				uuid: crypto.randomUUID(),
+				session_id: sessionId,
+			};
+			this.emitMessage(systemInitMessage);
 		}
 
 		// Track assistant message info for result synthesis

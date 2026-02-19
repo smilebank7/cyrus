@@ -852,8 +852,8 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 					) {
 						// Extract text content only, skip tool use noise
 						const textBlocks = message.message.content
-							.filter((block) => block.type === "text")
-							.map((block) => (block as { text: string }).text)
+							.filter((block: { type: string }) => block.type === "text")
+							.map((block: { type: string; text?: string }) => (block as { text: string }).text)
 							.join("");
 
 						if (textBlocks.trim()) {
@@ -864,9 +864,9 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 
 						// Log tool usage in a clean format, but filter out noisy tools
 						const toolBlocks = message.message.content
-							.filter((block) => block.type === "tool_use")
+							.filter((block: { type: string }) => block.type === "tool_use")
 							.filter(
-								(block) => (block as { name: string }).name !== "TodoWrite",
+								(block: { type: string; name?: string }) => (block as { name: string }).name !== "TodoWrite",
 							); // Filter out TodoWrite as it's noisy
 
 						if (toolBlocks.length > 0) {
@@ -900,8 +900,8 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 						Array.isArray(message.message.content)
 					) {
 						const userContent = message.message.content
-							.filter((block) => block.type === "text")
-							.map((block) => (block as { text: string }).text)
+							.filter((block: { type: string }) => block.type === "text")
+							.map((block: { type: string; text?: string }) => (block as { text: string }).text)
 							.join("");
 
 						if (userContent.trim()) {

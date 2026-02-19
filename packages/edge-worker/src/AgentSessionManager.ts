@@ -245,16 +245,20 @@ export class AgentSessionManager extends EventEmitter {
 		// Determine which runner is being used
 		const runner = linearSession.agentRunner;
 		const runnerType =
-			runner?.constructor.name === "GeminiRunner"
-				? "gemini"
-				: runner?.constructor.name === "CodexRunner"
-					? "codex"
-					: runner?.constructor.name === "CursorRunner"
-						? "cursor"
-						: "claude";
+			runner?.constructor.name === "OpenCodeRunner"
+				? "opencode"
+				: runner?.constructor.name === "GeminiRunner"
+					? "gemini"
+					: runner?.constructor.name === "CodexRunner"
+						? "codex"
+						: runner?.constructor.name === "CursorRunner"
+							? "cursor"
+							: "claude";
 
 		// Update the appropriate session ID based on runner type
-		if (runnerType === "gemini") {
+		if (runnerType === "opencode") {
+			linearSession.openCodeSessionId = claudeSystemMessage.session_id;
+		} else if (runnerType === "gemini") {
 			linearSession.geminiSessionId = claudeSystemMessage.session_id;
 		} else if (runnerType === "codex") {
 			linearSession.codexSessionId = claudeSystemMessage.session_id;
@@ -301,23 +305,27 @@ export class AgentSessionManager extends EventEmitter {
 		const session = this.sessions.get(sessionId);
 		const runner = session?.agentRunner;
 		const runnerType =
-			runner?.constructor.name === "GeminiRunner"
-				? "gemini"
-				: runner?.constructor.name === "CodexRunner"
-					? "codex"
-					: runner?.constructor.name === "CursorRunner"
-						? "cursor"
-						: "claude";
+			runner?.constructor.name === "OpenCodeRunner"
+				? "opencode"
+				: runner?.constructor.name === "GeminiRunner"
+					? "gemini"
+					: runner?.constructor.name === "CodexRunner"
+						? "codex"
+						: runner?.constructor.name === "CursorRunner"
+							? "cursor"
+							: "claude";
 
 		const sessionEntry: CyrusAgentSessionEntry = {
 			// Set the appropriate session ID based on runner type
-			...(runnerType === "gemini"
-				? { geminiSessionId: sdkMessage.session_id }
-				: runnerType === "codex"
-					? { codexSessionId: sdkMessage.session_id }
-					: runnerType === "cursor"
-						? { cursorSessionId: sdkMessage.session_id }
-						: { claudeSessionId: sdkMessage.session_id }),
+			...(runnerType === "opencode"
+				? { openCodeSessionId: sdkMessage.session_id }
+				: runnerType === "gemini"
+					? { geminiSessionId: sdkMessage.session_id }
+					: runnerType === "codex"
+						? { codexSessionId: sdkMessage.session_id }
+						: runnerType === "cursor"
+							? { cursorSessionId: sdkMessage.session_id }
+							: { claudeSessionId: sdkMessage.session_id }),
 			type: sdkMessage.type,
 			content: this.extractContent(sdkMessage),
 			metadata: {
@@ -487,12 +495,13 @@ export class AgentSessionManager extends EventEmitter {
 			return;
 		}
 
-		// Get the runner session ID (Claude, Gemini, Codex, or Cursor)
+		// Get the runner session ID (Claude, Gemini, Codex, Cursor, or OpenCode)
 		const runnerSessionId =
 			session.claudeSessionId ||
 			session.geminiSessionId ||
 			session.codexSessionId ||
-			session.cursorSessionId;
+			session.cursorSessionId ||
+			session.openCodeSessionId;
 		if (!runnerSessionId) {
 			log.error(`No runner session ID found for procedure session`);
 			return;
@@ -939,13 +948,15 @@ export class AgentSessionManager extends EventEmitter {
 		const session = this.sessions.get(sessionId);
 		const runner = session?.agentRunner;
 		const runnerType =
-			runner?.constructor.name === "GeminiRunner"
-				? "gemini"
-				: runner?.constructor.name === "CodexRunner"
-					? "codex"
-					: runner?.constructor.name === "CursorRunner"
-						? "cursor"
-						: "claude";
+			runner?.constructor.name === "OpenCodeRunner"
+				? "opencode"
+				: runner?.constructor.name === "GeminiRunner"
+					? "gemini"
+					: runner?.constructor.name === "CodexRunner"
+						? "codex"
+						: runner?.constructor.name === "CursorRunner"
+							? "cursor"
+							: "claude";
 
 		// For error results, content may be in errors[] rather than result
 		const content =
@@ -960,13 +971,15 @@ export class AgentSessionManager extends EventEmitter {
 
 		const resultEntry: CyrusAgentSessionEntry = {
 			// Set the appropriate session ID based on runner type
-			...(runnerType === "gemini"
-				? { geminiSessionId: resultMessage.session_id }
-				: runnerType === "codex"
-					? { codexSessionId: resultMessage.session_id }
-					: runnerType === "cursor"
-						? { cursorSessionId: resultMessage.session_id }
-						: { claudeSessionId: resultMessage.session_id }),
+			...(runnerType === "opencode"
+				? { openCodeSessionId: resultMessage.session_id }
+				: runnerType === "gemini"
+					? { geminiSessionId: resultMessage.session_id }
+					: runnerType === "codex"
+						? { codexSessionId: resultMessage.session_id }
+						: runnerType === "cursor"
+							? { cursorSessionId: resultMessage.session_id }
+							: { claudeSessionId: resultMessage.session_id }),
 			type: "result",
 			content,
 			metadata: {

@@ -26,7 +26,7 @@ export class RunnerSelectionService {
 	 * Resolve default model for a given runner from config with sensible built-in defaults.
 	 */
 	public getDefaultModelForRunner(
-		runnerType: "claude" | "gemini" | "codex" | "cursor",
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode",
 	): string {
 		if (runnerType === "claude") {
 			return (
@@ -39,6 +39,9 @@ export class RunnerSelectionService {
 		if (runnerType === "cursor") {
 			return "gpt-5";
 		}
+		if (runnerType === "opencode") {
+			return this.config.defaultModel || "anthropic/claude-sonnet-4-20250514";
+		}
 		return this.config.codexDefaultModel || "gpt-5.3-codex";
 	}
 
@@ -47,7 +50,7 @@ export class RunnerSelectionService {
 	 * Supports legacy Claude fallback key for backwards compatibility.
 	 */
 	public getDefaultFallbackModelForRunner(
-		runnerType: "claude" | "gemini" | "codex" | "cursor",
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode",
 	): string {
 		if (runnerType === "claude") {
 			return (
@@ -61,6 +64,9 @@ export class RunnerSelectionService {
 		}
 		if (runnerType === "cursor") {
 			return "gpt-5";
+		}
+		if (runnerType === "opencode") {
+			return this.config.defaultFallbackModel || "anthropic/claude-sonnet-4-20250514";
 		}
 		return "gpt-5";
 	}
@@ -87,20 +93,20 @@ export class RunnerSelectionService {
 	 * Determine runner type and model using labels + issue description tags.
 	 *
 	 * Supported description tags:
-	 * - [agent=claude|gemini|codex|cursor]
+	 * - [agent=claude|gemini|codex|cursor|opencode]
 	 * - [model=<model-name>]
 	 *
 	 * Precedence:
 	 * 1. Description tags override labels
 	 * 2. Agent labels override model labels
 	 * 3. Model labels can infer agent type
-	 * 4. Defaults to claude runner
+	 * 4. Defaults to opencode runner
 	 */
 	public determineRunnerSelection(
 		labels: string[],
 		issueDescription?: string,
 	): {
-		runnerType: "claude" | "gemini" | "codex" | "cursor";
+		runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode";
 		modelOverride?: string;
 		fallbackModelOverride?: string;
 	} {
@@ -116,22 +122,24 @@ export class RunnerSelectionService {
 		);
 
 		const defaultModelByRunner: Record<
-			"claude" | "gemini" | "codex" | "cursor",
+			"claude" | "gemini" | "codex" | "cursor" | "opencode",
 			string
 		> = {
 			claude: this.getDefaultModelForRunner("claude"),
 			gemini: this.getDefaultModelForRunner("gemini"),
 			codex: this.getDefaultModelForRunner("codex"),
 			cursor: this.getDefaultModelForRunner("cursor"),
+			opencode: this.getDefaultModelForRunner("opencode"),
 		};
 		const defaultFallbackByRunner: Record<
-			"claude" | "gemini" | "codex" | "cursor",
+			"claude" | "gemini" | "codex" | "cursor" | "opencode",
 			string
 		> = {
 			claude: this.getDefaultFallbackModelForRunner("claude"),
 			gemini: this.getDefaultFallbackModelForRunner("gemini"),
 			codex: this.getDefaultFallbackModelForRunner("codex"),
 			cursor: this.getDefaultFallbackModelForRunner("cursor"),
+			opencode: this.getDefaultFallbackModelForRunner("opencode"),
 		};
 
 		const isCodexModel = (model: string): boolean =>
@@ -139,7 +147,7 @@ export class RunnerSelectionService {
 
 		const inferRunnerFromModel = (
 			model?: string,
-		): "claude" | "gemini" | "codex" | "cursor" | undefined => {
+		): "claude" | "gemini" | "codex" | "cursor" | "opencode" | undefined => {
 			if (!model) return undefined;
 			const normalizedModel = model.toLowerCase();
 			if (normalizedModel.startsWith("gemini")) return "gemini";
@@ -157,7 +165,7 @@ export class RunnerSelectionService {
 
 		const inferFallbackModel = (
 			model: string,
-			runnerType: "claude" | "gemini" | "codex" | "cursor",
+			runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode",
 		): string | undefined => {
 			const normalizedModel = model.toLowerCase();
 			if (runnerType === "claude") {
@@ -200,7 +208,10 @@ export class RunnerSelectionService {
 
 		const resolveAgentFromLabel = (
 			lowercaseLabels: string[],
-		): "claude" | "gemini" | "codex" | "cursor" | undefined => {
+		): "claude" | "gemini" | "codex" | "cursor" | "opencode" | undefined => {
+			if (lowercaseLabels.includes("opencode")) {
+				return "opencode";
+			}
 			if (lowercaseLabels.includes("cursor")) {
 				return "cursor";
 			}
@@ -258,26 +269,28 @@ export class RunnerSelectionService {
 
 		const agentFromDescription = descriptionAgentTagRaw?.toLowerCase();
 		const resolvedAgentFromDescription =
-			agentFromDescription === "cursor"
-				? "cursor"
-				: agentFromDescription === "codex" || agentFromDescription === "openai"
-					? "codex"
-					: agentFromDescription === "gemini"
-						? "gemini"
-						: agentFromDescription === "claude"
-							? "claude"
-							: undefined;
+			agentFromDescription === "opencode"
+				? "opencode"
+				: agentFromDescription === "cursor"
+					? "cursor"
+					: agentFromDescription === "codex" || agentFromDescription === "openai"
+						? "codex"
+						: agentFromDescription === "gemini"
+							? "gemini"
+							: agentFromDescription === "claude"
+								? "claude"
+								: undefined;
 		const resolvedAgentFromLabels = resolveAgentFromLabel(normalizedLabels);
 
 		const modelFromDescription = descriptionModelTagRaw;
 		const modelFromLabels = resolveModelFromLabel(normalizedLabels);
 		const explicitModel = modelFromDescription || modelFromLabels;
 
-		const runnerType: "claude" | "gemini" | "codex" | "cursor" =
+		const runnerType: "claude" | "gemini" | "codex" | "cursor" | "opencode" =
 			resolvedAgentFromDescription ||
 			resolvedAgentFromLabels ||
 			inferRunnerFromModel(explicitModel) ||
-			"claude";
+			"opencode";
 
 		// If an explicit agent conflicts with model's implied runner, keep the agent and reset model.
 		const modelRunner = inferRunnerFromModel(explicitModel);

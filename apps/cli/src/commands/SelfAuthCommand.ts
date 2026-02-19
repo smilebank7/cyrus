@@ -156,7 +156,7 @@ export class SelfAuthCommand extends BaseCommand {
 			});
 
 			this.server
-				.listen({ port: this.callbackPort, host: "localhost" })
+				.listen({ port: this.callbackPort, host: "0.0.0.0" })
 				.then(() => {
 					console.log(
 						`Waiting for authorization on port ${this.callbackPort}...`,
