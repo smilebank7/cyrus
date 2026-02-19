@@ -138,34 +138,13 @@ export {
 } from "./adapters.js";
 
 // ============================================================================
-// Placeholder Exports for Future Implementation
+// Runner Implementation
 // ============================================================================
 
-/**
- * Placeholder for the OpenCode Runner class.
- * Will be implemented in a future issue.
- *
- * @todo CYPACK-634 - Implement OpenCodeRunner class
- */
-export const OpenCodeRunner = undefined as unknown as new (
-	config: import("./types.js").OpenCodeRunnerConfig,
-) => {
-	readonly supportsStreamingInput: boolean;
-	start(prompt: string): Promise<import("./types.js").OpenCodeSessionInfo>;
-	stop(): void;
-	isRunning(): boolean;
-};
+export { OpenCodeRunner } from "./OpenCodeRunner.js";
 
-/**
- * Placeholder for the Simple OpenCode Runner class.
- * Will be implemented in a future issue.
- *
- * @todo CYPACK-637 - Implement SimpleOpenCodeRunner class
- */
-export const SimpleOpenCodeRunner = undefined as unknown as new <
-	T extends string,
->(
-	config: import("./types.js").OpenCodeRunnerConfig,
-) => {
-	executeAgent(prompt: string): Promise<T[]>;
-};
+// ============================================================================
+// Formatter
+// ============================================================================
+
+export { OpenCodeMessageFormatter } from "./formatter.js";

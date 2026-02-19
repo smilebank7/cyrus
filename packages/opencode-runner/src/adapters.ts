@@ -103,6 +103,8 @@ function createBetaMessage(
 			cache_creation: null,
 			server_tool_use: null,
 			service_tier: null,
+			inference_geo: "",
+			iterations: [],
 		},
 		container: null,
 		context_management: null,
@@ -132,6 +134,8 @@ function createUsage(tokens?: {
 			web_search_requests: 0,
 		},
 		service_tier: "standard" as const,
+		inference_geo: "",
+		iterations: [],
 	};
 }
 
@@ -430,6 +434,7 @@ export function synthesizeResultMessage(
 		is_error: false,
 		num_turns: 0, // OpenCode doesn't track this directly
 		result: resultContent,
+		stop_reason: "end_turn",
 		total_cost_usd: assistantInfo?.cost || 0,
 		usage: createUsage(assistantInfo?.tokens),
 		modelUsage: {},
@@ -471,6 +476,7 @@ export function errorEventToSDKMessage(
 		is_error: true,
 		num_turns: 0,
 		errors: [errorMessage],
+		stop_reason: null,
 		total_cost_usd: 0,
 		usage: createUsage(),
 		modelUsage: {},
