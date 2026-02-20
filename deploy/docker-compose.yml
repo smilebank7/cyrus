@@ -1,24 +1,10 @@
-# =============================================================================
-# Cyrus self-hosted deployment with Traefik reverse proxy
-# =============================================================================
-# Usage:
-#   1. Copy .env.example to .env and fill in secrets
-#   2. docker compose build --no-cache
-#   3. docker compose up -d
-#
-# To register additional AI providers (e.g. OpenAI ChatGPT Plus):
-#   docker exec -it cyrus opencode auth login
-# =============================================================================
-
 networks:
   traefik-public:
     external: true
 
 services:
   cyrus:
-    build:
-      context: ..            # repo root
-      dockerfile: deploy/Dockerfile
+    image: ghcr.io/smilebank7/cyrus:latest
     container_name: cyrus
     restart: unless-stopped
     command: ["cyrus", "start"]
@@ -28,7 +14,6 @@ services:
       - cyrus-data:/root/.cyrus
       - cyrus-repos:/root/.cyrus/repos
       - opencode-data:/root/.local/share/opencode
-      - ./entrypoint.sh:/entrypoint.sh:ro
     networks:
       - traefik-public
     labels:

@@ -36,6 +36,10 @@ RUN pnpm install --no-frozen-lockfile && pnpm build
 WORKDIR /app/apps/cli
 RUN pnpm link --global
 
+# Bake entrypoint into image (no volume mount needed)
+COPY deploy/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Create cyrus home
 RUN mkdir -p /root/.cyrus
 
