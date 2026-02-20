@@ -70,7 +70,6 @@ import {
 } from "cyrus-core";
 import { CursorRunner } from "cyrus-cursor-runner";
 import { GeminiRunner } from "cyrus-gemini-runner";
-import { OpenCodeRunner } from "cyrus-opencode-runner";
 import {
 	extractCommentAuthor,
 	extractCommentBody,
@@ -100,6 +99,7 @@ import {
 	type CyrusToolsOptions,
 	createCyrusToolsServer,
 } from "cyrus-mcp-tools";
+import { OpenCodeRunner } from "cyrus-opencode-runner";
 import {
 	SlackEventTransport,
 	type SlackWebhookEvent,
@@ -4866,6 +4866,16 @@ ${input.userComment}
 		// OpenCode runner-specific wiring
 		if (runnerType === "opencode") {
 			(config as any).autoApprove = true;
+			(config as any).opencodeAgent =
+				process.env.CYRUS_OPENCODE_AGENT || undefined;
+			(config as any).opencodeReportedModel =
+				process.env.CYRUS_OPENCODE_REPORTED_MODEL || undefined;
+			(config as any).opencodePlugins = (
+				process.env.CYRUS_OPENCODE_PLUGINS || ""
+			)
+				.split(",")
+				.map((value) => value.trim())
+				.filter(Boolean);
 		}
 
 		if (resumeSessionId) {

@@ -134,11 +134,16 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 				? this.config.serverConfig.baseURL
 				: "opencode";
 			const args: string[] = ["run", "--format", "json"];
+			const opencodeAgent = this.config.opencodeAgent?.trim();
 
 			// Do not pass --model; let opencode.json / oh-my-opencode plugin control model selection
 
 			// Note: opencode CLI 1.x does not support --auto-approve, --system-prompt, --max-turns
 			// These are handled via opencode config or ignored
+
+			if (opencodeAgent) {
+				args.push("--agent", opencodeAgent);
+			}
 
 			// Add the prompt as positional argument (opencode CLI uses positional args, not --prompt)
 			args.push(prompt);
@@ -307,6 +312,10 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			this.sessionInfo.openCodeSessionId = sessionId;
 			console.log(`[OpenCodeRunner] Session ID assigned: ${sessionId}`);
 			this.setupLogging();
+			const reportedModel =
+				this.config.opencodeReportedModel?.trim() ||
+				"managed-by-opencode-plugin";
+			const reportedPlugins = this.config.opencodePlugins || [];
 
 			const systemInitMessage: SDKMessage = {
 				type: "system",
@@ -317,12 +326,12 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 				cwd: this.config.workingDirectory || process.cwd(),
 				tools: [],
 				mcp_servers: [],
-				model: this.config.model || "anthropic/claude-sonnet-4-20250514",
+				model: reportedModel,
 				permissionMode: "default",
 				slash_commands: [],
 				output_style: "default",
 				skills: [],
-				plugins: [],
+				plugins: reportedPlugins,
 				uuid: crypto.randomUUID(),
 				session_id: sessionId,
 			};

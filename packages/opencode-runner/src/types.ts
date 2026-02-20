@@ -78,6 +78,9 @@ export interface OpenCodeRunnerConfig extends AgentRunnerConfig {
 	 * OpenCode supports multiple AI providers.
 	 */
 	providerId?: string;
+	opencodeAgent?: string;
+	opencodeReportedModel?: string;
+	opencodePlugins?: string[];
 }
 
 // ============================================================================
