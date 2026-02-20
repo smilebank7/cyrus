@@ -135,18 +135,7 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 				: "opencode";
 			const args: string[] = ["run", "--format", "json"];
 
-			// Add model if specified (opencode CLI uses "provider/model" format)
-			if (this.config.model) {
-				// If providerId is set, combine as "provider/model"
-				if (this.config.providerId && !this.config.model.includes("/")) {
-					args.push("--model", `${this.config.providerId}/${this.config.model}`);
-				} else {
-					args.push("--model", this.config.model);
-				}
-			} else if (this.config.providerId) {
-				// Default to anthropic/claude-sonnet-4-20250514 if only provider is set
-				args.push("--model", `${this.config.providerId}/claude-sonnet-4-20250514`);
-			}
+			// Do not pass --model; let opencode.json / oh-my-opencode plugin control model selection
 
 			// Note: opencode CLI 1.x does not support --auto-approve, --system-prompt, --max-turns
 			// These are handled via opencode config or ignored
