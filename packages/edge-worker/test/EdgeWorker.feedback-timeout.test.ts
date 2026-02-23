@@ -170,6 +170,21 @@ describe("EdgeWorker - Feedback Delivery Timeout Issue", () => {
 
 		edgeWorker = new EdgeWorker(mockConfig);
 
+		const fullDevelopmentProcedure = (
+			edgeWorker as any
+		).procedureAnalyzer.getProcedure("full-development");
+		if (!fullDevelopmentProcedure) {
+			throw new Error("full-development procedure not found");
+		}
+		vi.spyOn(
+			(edgeWorker as any).procedureAnalyzer,
+			"determineRoutine",
+		).mockResolvedValue({
+			classification: "code",
+			procedure: fullDevelopmentProcedure,
+			reasoning: "mocked for timeout tests",
+		});
+
 		// Setup parent-child mapping
 		(edgeWorker as any).childToParentAgentSession.set(
 			"child-session-456",

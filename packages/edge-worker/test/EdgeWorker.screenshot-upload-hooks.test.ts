@@ -8,6 +8,7 @@ import {
 } from "sylas-core";
 import { GeminiRunner } from "sylas-gemini-runner";
 import { LinearEventTransport } from "sylas-linear-event-transport";
+import { OpenCodeRunner } from "sylas-opencode-runner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
@@ -27,6 +28,7 @@ vi.mock("sylas-claude-runner");
 vi.mock("sylas-codex-runner");
 vi.mock("sylas-gemini-runner");
 vi.mock("sylas-linear-event-transport");
+vi.mock("sylas-opencode-runner");
 vi.mock("@linear/sdk");
 vi.mock("../src/SharedApplicationServer.js");
 vi.mock("../src/AgentSessionManager.js");
@@ -61,6 +63,7 @@ describe("EdgeWorker - Screenshot Upload Guidance Hooks", () => {
 	let mockLinearClient: any;
 	let mockClaudeRunner: any;
 	let mockGeminiRunner: any;
+	let mockOpenCodeRunner: any;
 	let mockAgentSessionManager: any;
 	let capturedRunnerConfig: any = null;
 
@@ -148,6 +151,22 @@ describe("EdgeWorker - Screenshot Upload Guidance Hooks", () => {
 		};
 		vi.mocked(GeminiRunner).mockImplementation((_config: any) => {
 			return mockGeminiRunner;
+		});
+
+		mockOpenCodeRunner = {
+			supportsStreamingInput: true,
+			start: vi.fn().mockResolvedValue({ sessionId: "opencode-session-123" }),
+			startStreaming: vi
+				.fn()
+				.mockResolvedValue({ sessionId: "opencode-session-123" }),
+			stop: vi.fn(),
+			isRunning: vi.fn().mockReturnValue(false),
+			addStreamMessage: vi.fn(),
+			updatePromptVersions: vi.fn(),
+		};
+		vi.mocked(OpenCodeRunner).mockImplementation((config: any) => {
+			capturedRunnerConfig = config;
+			return mockOpenCodeRunner;
 		});
 
 		// Mock AgentSessionManager

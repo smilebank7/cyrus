@@ -10,6 +10,7 @@ import {
 import { CursorRunner } from "sylas-cursor-runner";
 import { GeminiRunner } from "sylas-gemini-runner";
 import { LinearEventTransport } from "sylas-linear-event-transport";
+import { OpenCodeRunner } from "sylas-opencode-runner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
@@ -29,6 +30,7 @@ vi.mock("sylas-claude-runner");
 vi.mock("sylas-codex-runner");
 vi.mock("sylas-cursor-runner");
 vi.mock("sylas-gemini-runner");
+vi.mock("sylas-opencode-runner");
 vi.mock("sylas-linear-event-transport");
 vi.mock("@linear/sdk");
 vi.mock("../src/SharedApplicationServer.js");
@@ -55,9 +57,15 @@ describe("EdgeWorker - Runner Selection Based on Labels", () => {
 	let mockCodexRunner: any;
 	let mockCursorRunner: any;
 	let mockGeminiRunner: any;
+	let mockOpenCodeRunner: any;
 	let mockAgentSessionManager: any;
-	let capturedRunnerType: "claude" | "gemini" | "codex" | "cursor" | null =
-		null;
+	let capturedRunnerType:
+		| "claude"
+		| "gemini"
+		| "codex"
+		| "cursor"
+		| "opencode"
+		| null = null;
 	let capturedRunnerConfig: any = null;
 
 	const mockRepository: RepositoryConfig = {
@@ -189,6 +197,23 @@ describe("EdgeWorker - Runner Selection Based on Labels", () => {
 			return mockCursorRunner;
 		});
 
+		mockOpenCodeRunner = {
+			supportsStreamingInput: true,
+			start: vi.fn().mockResolvedValue({ sessionId: "opencode-session-123" }),
+			startStreaming: vi
+				.fn()
+				.mockResolvedValue({ sessionId: "opencode-session-123" }),
+			stop: vi.fn(),
+			isRunning: vi.fn().mockReturnValue(false),
+			addStreamMessage: vi.fn(),
+			updatePromptVersions: vi.fn(),
+		};
+		vi.mocked(OpenCodeRunner).mockImplementation((config: any) => {
+			capturedRunnerType = "opencode";
+			capturedRunnerConfig = config;
+			return mockOpenCodeRunner;
+		});
+
 		// Mock AgentSessionManager
 		mockAgentSessionManager = {
 			createLinearAgentSession: vi.fn(),
@@ -303,8 +328,6 @@ Issue: {{issue_identifier}}`;
 			// Assert
 			expect(capturedRunnerType).toBe("gemini");
 			expect(GeminiRunner).toHaveBeenCalled();
-			// ClaudeRunner is called once for the classifier (ProcedureAnalyzer uses Claude by default)
-			expect(ClaudeRunner).toHaveBeenCalledTimes(1);
 		});
 
 		it("should select Gemini runner with gemini-2.5-pro model when 'gemini-2.5-pro' label is present", async () => {
@@ -335,8 +358,6 @@ Issue: {{issue_identifier}}`;
 			// Assert
 			expect(capturedRunnerType).toBe("gemini");
 			expect(GeminiRunner).toHaveBeenCalled();
-			// ClaudeRunner is called once for the classifier (ProcedureAnalyzer uses Claude by default)
-			expect(ClaudeRunner).toHaveBeenCalledTimes(1);
 			expect(capturedRunnerConfig.model).toBe("gemini-2.5-pro");
 		});
 
@@ -428,8 +449,6 @@ Issue: {{issue_identifier}}`;
 
 			expect(capturedRunnerType).toBe("codex");
 			expect(CodexRunner).toHaveBeenCalled();
-			// ClaudeRunner is called once for the classifier (ProcedureAnalyzer uses Claude by default)
-			expect(ClaudeRunner).toHaveBeenCalledTimes(1);
 		});
 
 		it("should select Codex runner with gpt-5-codex model when 'gpt-5-codex' label is present", async () => {
@@ -739,7 +758,7 @@ Issue: {{issue_identifier}}`;
 	});
 
 	describe("Default Runner Selection", () => {
-		it("should default to Claude runner when no runner-related labels are present", async () => {
+		it("should default to OpenCode runner when no runner-related labels are present", async () => {
 			// Arrange
 			const mockIssue = createMockIssueWithLabels(["bug", "feature"]);
 			mockLinearClient.issue.mockResolvedValue(mockIssue);
@@ -765,12 +784,13 @@ Issue: {{issue_identifier}}`;
 			]);
 
 			// Assert
-			expect(capturedRunnerType).toBe("claude");
-			expect(ClaudeRunner).toHaveBeenCalled();
+			expect(capturedRunnerType).toBe("opencode");
+			expect(OpenCodeRunner).toHaveBeenCalled();
+			expect(ClaudeRunner).not.toHaveBeenCalled();
 			expect(GeminiRunner).not.toHaveBeenCalled();
 		});
 
-		it("should default to Claude runner when issue has no labels", async () => {
+		it("should default to OpenCode runner when issue has no labels", async () => {
 			// Arrange
 			const mockIssue = createMockIssueWithLabels([]);
 			mockLinearClient.issue.mockResolvedValue(mockIssue);
@@ -796,8 +816,9 @@ Issue: {{issue_identifier}}`;
 			]);
 
 			// Assert
-			expect(capturedRunnerType).toBe("claude");
-			expect(ClaudeRunner).toHaveBeenCalled();
+			expect(capturedRunnerType).toBe("opencode");
+			expect(OpenCodeRunner).toHaveBeenCalled();
+			expect(ClaudeRunner).not.toHaveBeenCalled();
 			expect(GeminiRunner).not.toHaveBeenCalled();
 		});
 	});
