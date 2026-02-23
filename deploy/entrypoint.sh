@@ -15,7 +15,7 @@ fi
 
 # --- Git credentials (from host bind mount) ----------------------------------
 
-if [ -s /root/.git-credentials-host ]; then
+if [ -f /root/.git-credentials-host ] && [ -s /root/.git-credentials-host ]; then
   git config --global credential.helper store
   cp /root/.git-credentials-host /root/.git-credentials
   chmod 600 /root/.git-credentials

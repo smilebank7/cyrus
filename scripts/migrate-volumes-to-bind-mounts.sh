@@ -40,6 +40,8 @@ docker cp "$CONTAINER":/root/.config/gh/. "$STATE_DIR/gh/" 2>/dev/null \
 chmod 600 "$STATE_DIR/opencode/auth.json" 2>/dev/null || true
 chmod 600 "$STATE_DIR/git-credentials" 2>/dev/null || true
 
+touch "$STATE_DIR/.migrated"
+
 echo ""
 echo "=== Migration complete ==="
 echo "Remove ANTHROPIC_API_KEY from $SYLAS_ROOT/.env, then:"

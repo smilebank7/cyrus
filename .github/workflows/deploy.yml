@@ -49,15 +49,15 @@ jobs:
           sudo mkdir -p state/{sylas,opencode,opencode-config,gh}
           sudo touch state/git-credentials
 
-          # One-time migration: copy auth from old Docker volumes if bind mounts are empty
-          if [ ! -f state/opencode/auth.json ] && sudo docker inspect sylas &>/dev/null; then
-            echo "Migrating auth from old container volumes..."
+          if [ ! -f state/.migrated ] && sudo docker inspect sylas &>/dev/null; then
+            echo "Migrating state from old container volumes..."
             sudo docker cp sylas:/root/.local/share/opencode/auth.json state/opencode/auth.json 2>/dev/null || true
             sudo docker cp sylas:/root/.sylas/. state/sylas/ 2>/dev/null || true
             sudo docker cp sylas:/root/.git-credentials state/git-credentials 2>/dev/null || true
             sudo docker cp sylas:/root/.config/gh/. state/gh/ 2>/dev/null || true
             sudo chmod 600 state/opencode/auth.json 2>/dev/null || true
             sudo chmod 600 state/git-credentials 2>/dev/null || true
+            sudo touch state/.migrated
           fi
 
           sudo docker compose up -d --force-recreate
