@@ -30,7 +30,7 @@ jobs:
           gh pr list --repo "$UPSTREAM_REPO" \
             --state merged \
             --json number,title,body,mergedAt,url,additions,deletions \
-            --limit 50 > /tmp/upstream-prs.json
+            --limit 200 > /tmp/upstream-prs.json
 
           echo "Found $(jq length /tmp/upstream-prs.json) recently merged PRs"
 
@@ -47,7 +47,7 @@ jobs:
             PR_NUM=$(echo "$pr" | jq -r '.number')
             PR_TITLE=$(echo "$pr" | jq -r '.title')
             PR_URL=$(echo "$pr" | jq -r '.url')
-            PR_BODY=$(echo "$pr" | jq -r '.body // "No description provided."' | head -c 2000)
+            PR_BODY=$(echo "$pr" | jq -r '(.body // "No description provided.") | .[:2000]')
             ADDITIONS=$(echo "$pr" | jq -r '.additions')
             DELETIONS=$(echo "$pr" | jq -r '.deletions')
             MERGED_AT=$(echo "$pr" | jq -r '.mergedAt')
