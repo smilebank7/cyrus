@@ -4,7 +4,7 @@ Self-hosted AI coding agent for [Linear](https://linear.app). Monitors Linear is
 
 ## Overview
 
-Sylas is a fork of [Cyrus](https://github.com/sonnytheai/cyrus) — reimagined to use **OpenCode** as the AI runner instead of Claude Code CLI, with full multi-agent support via the oh-my-opencode plugin (Sisyphus/Opus architecture).
+Sylas is a fork of [Cyrus](https://github.com/ceedaragents/cyrus) — reimagined to use **OpenCode** as the AI runner instead of Claude Code CLI, with full multi-agent support via the oh-my-opencode plugin (Sisyphus/Opus architecture).
 
 ### How It Works
 
