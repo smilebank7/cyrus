@@ -5,6 +5,10 @@ on:
     - cron: '0 9 * * 1' # Every Monday 09:00 UTC (18:00 KST)
   workflow_dispatch:
 
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
 jobs:
   sync-upstream-prs:
     runs-on: ubuntu-latest
