@@ -66,26 +66,30 @@ You'll need:
 
 ---
 
-## Step 2: Configure Claude Code Authentication
+## Step 2: Configure AI Runner Authentication
 
-Sylas needs Claude Code credentials. Choose one option and add it to your env file (`~/.sylas/.env`):
+Sylas uses OpenCode with the oh-my-opencode plugin for multi-agent orchestration.
 
-**Option A: API Key** (recommended)
+### Native CLI (this guide)
+
+Run `opencode auth login` on the host machine and follow the browser OAuth flow. Auth tokens are stored in `~/.local/share/opencode/auth.json`.
+
+### Docker Hybrid (recommended for servers)
+
+Auth is managed on the **host** and bind-mounted into the container. See `deploy/` directory:
+
 ```bash
-ANTHROPIC_API_KEY=your-api-key
+# One-time setup on server
+cd /opt/sylas
+sudo ./scripts/auth-bootstrap.sh
+
+# Starts interactive prompts for:
+# 1. Anthropic OAuth token (from opencode auth login on local machine)
+# 2. GitHub personal access token
+# 3. GitHub CLI auth
 ```
-Get your API key from the [Anthropic Console](https://console.anthropic.com/).
 
-**Option B: OAuth Token** (for Max subscription users)
-
-Run `claude setup-token` on any machine where you already have Claude Code installed (e.g., your laptop), then add to your env file:
-```bash
-CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token
-```
-
-**Option C: Third-Party Providers**
-
-For Vertex AI, Azure, AWS Bedrock, and other providers, see the [Third-Party Integrations](https://docs.anthropic.com/en/docs/claude-code/bedrock-vertex) documentation.
+The container fails fast if `state/opencode/auth.json` is missing — no silent fallback.
 
 ---
 
@@ -169,12 +173,9 @@ LINEAR_CLIENT_ID=your_client_id
 LINEAR_CLIENT_SECRET=your_client_secret
 LINEAR_WEBHOOK_SECRET=your_webhook_secret
 
-# Claude Code authentication (choose one)
-ANTHROPIC_API_KEY=your-api-key
-# or: CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token
-
-# Optional: Cloudflare Tunnel
-# CLOUDFLARE_TOKEN=your-cloudflare-token
+# GitHub (fallback — prefer bind mount via auth-bootstrap.sh)
+GITHUB_TOKEN=your-github-token
+GH_TOKEN=your-github-token
 ```
 
 ---
@@ -307,11 +308,11 @@ For detailed options, see the [Configuration File Reference](./CONFIG_FILE.md).
 - Verify Linear tokens are valid with `sylas check-tokens`
 - Ensure the issue is assigned to Sylas in Linear
 
-### Claude Code Not Working
+### OpenCode Not Working
 
-- Verify your Claude Code credentials are set in the env file
-- For API key: Check it's valid at [console.anthropic.com](https://console.anthropic.com/)
-- For OAuth token: Run `claude setup-token` again to refresh
+- Check `~/.local/share/opencode/auth.json` exists (native) or `state/opencode/auth.json` (Docker)
+- Re-run `opencode auth login` on a machine with a browser to refresh tokens
+- For Docker: re-run `scripts/auth-bootstrap.sh` on the host
 
 ---
 
