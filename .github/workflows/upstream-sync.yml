@@ -56,6 +56,7 @@ jobs:
             # Fail loudly if GitHub API is unreachable (prevents false-negative dedup)
             if ! EXISTING=$(gh issue list \
               --repo "${{ github.repository }}" \
+              --state all \
               --label "upstream-sync" \
               --search "upstream-sync:cyrus#${PR_NUM}" \
               --json number --jq length); then
