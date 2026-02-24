@@ -101,22 +101,22 @@ jobs:
             fi
 
             # --- GitHub Issue (dedup tracker) ---
-            cat > /tmp/gh-issue-body.md <<GHEOF
-<!-- upstream-sync:cyrus#${PR_NUM} -->
-
-## Upstream PR
-
-- **Source**: ${PR_URL}
-- **Merged**: ${MERGED_AT}
-- **Changes**: +${ADDITIONS} / -${DELETIONS}
-
-## Original Description
-
-${PR_BODY}
-
----
-_Auto-created by [upstream-sync workflow](https://github.com/${{ github.repository }}/actions/workflows/upstream-sync.yml). Add \`approved-for-sync\` label to trigger agent cherry-pick._
-GHEOF
+            {
+              echo "<!-- upstream-sync:cyrus#${PR_NUM} -->"
+              echo ""
+              echo "## Upstream PR"
+              echo ""
+              echo "- **Source**: ${PR_URL}"
+              echo "- **Merged**: ${MERGED_AT}"
+              echo "- **Changes**: +${ADDITIONS} / -${DELETIONS}"
+              echo ""
+              echo "## Original Description"
+              echo ""
+              echo "${PR_BODY}"
+              echo ""
+              echo "---"
+              echo "_Auto-created by [upstream-sync workflow](https://github.com/${{ github.repository }}/actions/workflows/upstream-sync.yml). Add \`approved-for-sync\` label to trigger agent cherry-pick._"
+            } > /tmp/gh-issue-body.md
 
             # --- Linear Issue first (so dedup marker isn't set if this fails) ---
             jq -n \
