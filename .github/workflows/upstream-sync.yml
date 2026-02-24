@@ -38,6 +38,7 @@ jobs:
         run: |
           gh pr list --repo "$UPSTREAM_REPO" \
             --state merged \
+            --search "merged:>2026-02-21" \
             --json number,title,body,mergedAt,url,additions,deletions \
             --limit 200 > /tmp/upstream-prs.json
 
