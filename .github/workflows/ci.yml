@@ -57,7 +57,7 @@ jobs:
             pkg_dir=$(dirname "$pkg_dir")
           done
           # Run test from its package directory so bunfig.toml is picked up
-          rel_path=$(echo "$f" | sed "s|^$pkg_dir/||")
+          rel_path="${f#"$pkg_dir/"}"
           if ! (cd "$pkg_dir" && bun test "./$rel_path") > /dev/null 2>&1; then
             echo "FAIL: $f"
             (cd "$pkg_dir" && bun test "./$rel_path") 2>&1 | tail -20

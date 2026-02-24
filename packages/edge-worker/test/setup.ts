@@ -192,7 +192,14 @@ export const mockClaudeResultMessage = (
 		...(subtype === "success" && { result: "Task completed successfully" }),
 	}) as any;
 
-// Reset all mocks after each test
+// Clear console mock call history between tests so assertions only see calls from the current test.
+// Note: mock.restore() does NOT undo manual global.console replacement, so the mocks persist
+// across all tests in a file — only call counts/args need resetting.
 afterEach(() => {
+	(console.log as any).mockClear?.();
+	(console.debug as any).mockClear?.();
+	(console.info as any).mockClear?.();
+	(console.warn as any).mockClear?.();
+	(console.error as any).mockClear?.();
 	mock.restore();
 });
