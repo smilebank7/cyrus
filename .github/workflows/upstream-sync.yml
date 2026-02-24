@@ -4,7 +4,16 @@ on:
   schedule:
     - cron: '0 9 * * 1' # Every Monday 09:00 UTC (18:00 KST)
   workflow_dispatch:
-
+    inputs:
+      dry_run:
+        description: 'Preview what would be created without making changes'
+        required: false
+        type: boolean
+        default: false
+      pr_number:
+        description: 'Sync only this upstream PR number (empty = all)'
+        required: false
+        type: string
 
 concurrency:
   group: upstream-sync
@@ -33,6 +42,17 @@ jobs:
             --limit 200 > /tmp/upstream-prs.json
 
           echo "Found $(jq length /tmp/upstream-prs.json) recently merged PRs"
+
+          # Filter to specific PR if requested via workflow_dispatch
+          if [ -n "${{ inputs.pr_number }}" ]; then
+            jq '[.[] | select(.number == ($n | tonumber))]' --arg n "${{ inputs.pr_number }}" /tmp/upstream-prs.json > /tmp/filtered.json
+            mv /tmp/filtered.json /tmp/upstream-prs.json
+            echo "Filtered to PR #${{ inputs.pr_number }} ($(jq length /tmp/upstream-prs.json) match)"
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🏜️ DRY RUN — will preview actions without creating issues"
+          fi
 
       - name: Sync new PRs to GitHub Issues + Linear
         env:
@@ -71,6 +91,14 @@ jobs:
             fi
 
             echo "📝 Creating: cyrus#${PR_NUM} — ${PR_TITLE}"
+
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "   🏜️ [DRY RUN] Would create GitHub issue + Linear issue for cyrus#${PR_NUM}"
+              echo "   Title: ⬆️ Upstream: ${PR_TITLE}"
+              echo "   Changes: +${ADDITIONS} / -${DELETIONS} (merged ${MERGED_AT})"
+              CREATED=$((CREATED + 1))
+              continue
+            fi
 
             # --- GitHub Issue (dedup tracker) ---
             cat > /tmp/gh-issue-body.md <<GHEOF
@@ -140,3 +168,6 @@ GHEOF
 
           echo ""
           echo "✅ Upstream sync complete — Created: $CREATED | Skipped: $SKIPPED | Failed: $FAILED"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🏜️ This was a dry run — no issues were actually created"
+          fi
