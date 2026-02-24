@@ -38,11 +38,12 @@ jobs:
         run: |
           gh pr list --repo "$UPSTREAM_REPO" \
             --state merged \
-            --search "merged:>2026-02-21" \
             --json number,title,body,mergedAt,url,additions,deletions \
-            --limit 200 > /tmp/upstream-prs.json
+            --limit 200 > /tmp/upstream-prs-raw.json
 
-          echo "Found $(jq length /tmp/upstream-prs.json) recently merged PRs"
+          # Only track PRs merged after fork date
+          jq '[.[] | select(.mergedAt >= "2026-02-21")]' /tmp/upstream-prs-raw.json > /tmp/upstream-prs.json
+          echo "Found $(jq length /tmp/upstream-prs.json) PRs merged since fork ($(jq length /tmp/upstream-prs-raw.json) total)"
 
           # Filter to specific PR if requested via workflow_dispatch
           if [ -n "${{ inputs.pr_number }}" ]; then
