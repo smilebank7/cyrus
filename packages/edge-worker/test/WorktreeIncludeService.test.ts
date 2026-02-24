@@ -1,4 +1,13 @@
 import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
+import {
 	existsSync,
 	mkdirSync,
 	readFileSync,
@@ -7,7 +16,6 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WorktreeIncludeService } from "../src/WorktreeIncludeService.js";
 
 describe("WorktreeIncludeService", () => {
@@ -26,9 +34,9 @@ describe("WorktreeIncludeService", () => {
 		mkdirSync(testWorktreePath, { recursive: true });
 
 		mockLogger = {
-			info: vi.fn(),
-			warn: vi.fn(),
-			error: vi.fn(),
+			info: mock(),
+			warn: mock(),
+			error: mock(),
 		};
 
 		service = new WorktreeIncludeService(mockLogger);
@@ -303,7 +311,7 @@ describe("WorktreeIncludeService", () => {
 			writeFileSync(join(testRepoPath, ".env"), "SECRET=test");
 
 			// Spy on console.log
-			const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+			const consoleSpy = spyOn(console, "log").mockImplementation(() => {});
 
 			await defaultService.copyIgnoredFiles(testRepoPath, testWorktreePath);
 

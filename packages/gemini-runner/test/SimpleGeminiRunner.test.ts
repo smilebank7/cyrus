@@ -1,20 +1,20 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type {
 	SDKAssistantMessage,
 	SDKMessage,
 } from "@anthropic-ai/claude-agent-sdk";
 import type { SimpleAgentRunnerConfig } from "sylas-simple-agent-runner";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GeminiRunner } from "../src/GeminiRunner.js";
 import { SimpleGeminiRunner } from "../src/SimpleGeminiRunner.js";
 
 // Mock GeminiRunner
-vi.mock("../src/GeminiRunner.js", () => {
+mock.module("../src/GeminiRunner.js", () => {
 	return {
-		GeminiRunner: vi.fn(),
+		GeminiRunner: mock(),
 	};
 });
 
-const MockedGeminiRunner = vi.mocked(GeminiRunner);
+const MockedGeminiRunner = GeminiRunner as any;
 
 describe("SimpleGeminiRunner", () => {
 	let runner: SimpleGeminiRunner<"approve" | "reject">;
@@ -29,12 +29,12 @@ describe("SimpleGeminiRunner", () => {
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		eventHandlers = new Map();
 
 		// Create a fresh mock for each test with proper event handling
 		mockRunner = {
-			start: vi.fn().mockImplementation(async () => {
+			start: mock().mockImplementation(async () => {
 				// Simulate message event
 				const messageHandler = eventHandlers.get("message");
 				const completeHandler = eventHandlers.get("complete");
@@ -51,16 +51,16 @@ describe("SimpleGeminiRunner", () => {
 
 				return undefined;
 			}),
-			getMessages: vi.fn().mockImplementation(() => mockRunner._messages || []),
-			isRunning: vi.fn().mockReturnValue(false),
-			stop: vi.fn(),
-			on: vi
-				.fn()
-				.mockImplementation((event: string, handler: (arg: any) => void) => {
+			getMessages: mock().mockImplementation(() => mockRunner._messages || []),
+			isRunning: mock().mockReturnValue(false),
+			stop: mock(),
+			on: mock().mockImplementation(
+				(event: string, handler: (arg: any) => void) => {
 					eventHandlers.set(event, handler);
 					return mockRunner;
-				}),
-			emit: vi.fn(),
+				},
+			),
+			emit: mock(),
 			_messages: [], // Internal state for test control
 		};
 
@@ -108,7 +108,7 @@ describe("SimpleGeminiRunner", () => {
 		});
 
 		it("should accept optional onProgress callback", () => {
-			const onProgress = vi.fn();
+			const onProgress = mock();
 			const configWithProgress = {
 				...defaultConfig,
 				onProgress,
@@ -390,7 +390,7 @@ describe("SimpleGeminiRunner", () => {
 
 	describe("Progress Callbacks", () => {
 		it("should call onProgress callback during execution", async () => {
-			const onProgress = vi.fn();
+			const onProgress = mock();
 			const progressConfig = {
 				...defaultConfig,
 				onProgress,

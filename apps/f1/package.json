@@ -14,11 +14,11 @@
 		"server": "bun run server.ts",
 		"server:dev": "bun --watch server.ts",
 		"dev": "tsc --watch",
-		"test": "vitest",
-		"test:run": "vitest run --passWithNoTests",
-		"test:watch": "vitest",
+		"test": "bun test",
+		"test:run": "bun test",
+		"test:watch": "bun test --watch",
 		"typecheck": "tsc --noEmit",
-		"prepublishOnly": "cd ../.. && pnpm build"
+		"prepublishOnly": "cd ../.. && bun run build"
 	},
 	"files": [
 		"dist",
@@ -38,8 +38,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
-		"typescript": "^5.3.3",
-		"vitest": "^3.1.4"
+		"typescript": "^5.3.3"
 	},
 	"engines": {
 		"node": ">=20.0.0"

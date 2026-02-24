@@ -8,7 +8,6 @@
  * {{new_comment_content}} template variables in standard-issue-assigned-user-prompt.md
  */
 
-import { describe, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - New Comment Metadata in Agent Sessions", () => {

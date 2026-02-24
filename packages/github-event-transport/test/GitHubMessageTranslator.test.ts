@@ -1,5 +1,4 @@
 import type { GitHubSessionStartPlatformData } from "sylas-core";
-import { describe, expect, it } from "vitest";
 import { GitHubMessageTranslator } from "../src/GitHubMessageTranslator.js";
 import type {
 	GitHubIssueCommentPayload,

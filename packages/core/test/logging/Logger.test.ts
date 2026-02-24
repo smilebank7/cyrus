@@ -1,19 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { createLogger, LogLevel } from "../../src/logging/index.js";
 
 describe("Logger", () => {
-	let logSpy: ReturnType<typeof vi.spyOn>;
-	let warnSpy: ReturnType<typeof vi.spyOn>;
-	let errorSpy: ReturnType<typeof vi.spyOn>;
+	let logSpy: ReturnType<typeof spyOn>;
+	let warnSpy: ReturnType<typeof spyOn>;
+	let errorSpy: ReturnType<typeof spyOn>;
 
 	beforeEach(() => {
-		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-		warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-		errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		logSpy = spyOn(console, "log").mockImplementation(() => {});
+		warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+		errorSpy = spyOn(console, "error").mockImplementation(() => {});
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 		delete process.env.SYLAS_LOG_LEVEL;
 	});
 

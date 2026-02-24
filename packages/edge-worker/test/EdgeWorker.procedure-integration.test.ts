@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { SylasAgentSession } from "sylas-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager";
 import { ProcedureAnalyzer } from "../src/procedures/ProcedureAnalyzer";
 import { PROCEDURES } from "../src/procedures/registry";
@@ -24,8 +24,8 @@ describe("EdgeWorker - Procedure Routing Integration", () => {
 		// Create minimal mock activity sink
 		mockActivitySink = {
 			id: "test-workspace",
-			postActivity: vi.fn().mockResolvedValue({ activityId: "activity-123" }),
-			createAgentSession: vi.fn().mockResolvedValue("session-123"),
+			postActivity: mock().mockResolvedValue({ activityId: "activity-123" }),
+			createAgentSession: mock().mockResolvedValue("session-123"),
 		};
 
 		// Create AgentSessionManager with procedure router

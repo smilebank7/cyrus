@@ -1,5 +1,4 @@
 import { ClaudeMessageFormatter } from "sylas-claude-runner";
-import { describe, expect, test } from "vitest";
 
 describe("AgentSessionManager - Tool Formatting", () => {
 	// Create formatter instance to test

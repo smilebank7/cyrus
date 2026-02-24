@@ -7,7 +7,6 @@
  */
 
 import type { SylasAgentSession } from "sylas-core";
-import { beforeEach, describe, expect, it } from "vitest";
 import { ProcedureAnalyzer } from "../src/procedures/ProcedureAnalyzer";
 import { PROCEDURES, SUBROUTINES } from "../src/procedures/registry";
 

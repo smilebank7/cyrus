@@ -4,7 +4,6 @@
  * Tests that prompt components are assembled in the correct order.
  */
 
-import { describe, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - Component Order", () => {

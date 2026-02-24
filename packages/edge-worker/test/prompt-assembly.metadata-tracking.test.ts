@@ -4,7 +4,6 @@
  * Tests that prompt assembly correctly tracks metadata about the prompt.
  */
 
-import { describe, expect, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - Metadata Tracking", () => {

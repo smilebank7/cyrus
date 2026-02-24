@@ -1,29 +1,33 @@
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { exec } from "node:child_process";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { handleCheckGh } from "../../src/handlers/checkGh.js";
+
 import type { CheckGhPayload } from "../../src/types.js";
 
-// Mock node:child_process
-vi.mock("node:child_process", () => ({
-	exec: vi.fn(),
+// Mock node:child_process with callback-style exec that works with promisify
+mock.module("node:child_process", () => ({
+	...require("node:child_process"),
+	exec: mock(),
 }));
 
-// Mock node:util (promisify is used in the handler)
-vi.mock("node:util", () => ({
-	promisify: (fn: any) => fn,
+// Mock node:util so promisify returns the fn as-is (making exec behave as promise-returning)
+mock.module("node:util", () => ({
+	...require("node:util"),
+	promisify: mock((fn: any) => fn),
 }));
+
+const { handleCheckGh } = await import("../../src/handlers/checkGh.js");
 
 describe("handleCheckGh", () => {
-	const mockExec = vi.mocked(exec);
+	const mockExec = exec as any;
 	const sylasHome = "/test/sylas/home";
 	const payload: CheckGhPayload = {};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mockExec.mockClear?.();
 	});
 
 	afterEach(() => {
-		vi.resetAllMocks();
+		mock.restore();
 	});
 
 	describe("when gh is installed and authenticated", () => {

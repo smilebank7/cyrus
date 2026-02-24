@@ -4,8 +4,8 @@
  * Provides a human-readable DSL for testing EdgeWorker.assemblePrompt() method.
  */
 
+import { expect } from "bun:test";
 import type { RepositoryConfig } from "sylas-core";
-import { expect } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import type { EdgeWorkerConfig } from "../src/types.js";
 

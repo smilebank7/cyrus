@@ -124,7 +124,7 @@ See [`deploy/`](./deploy/) for Docker Compose, Dockerfile, and environment confi
 
 ## Architecture
 
-pnpm monorepo with edge-worker architecture:
+Bun monorepo with edge-worker architecture:
 
 ```
 sylas/

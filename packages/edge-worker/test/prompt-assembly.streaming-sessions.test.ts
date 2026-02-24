@@ -4,7 +4,6 @@
  * Tests prompt assembly for streaming (continuation) sessions.
  */
 
-import { describe, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - Streaming Sessions", () => {

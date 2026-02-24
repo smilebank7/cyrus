@@ -1,8 +1,8 @@
+import { afterEach, mock } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SDKMessage } from "sylas-claude-runner";
-import { vi } from "vitest";
 
 // Keep Claude SDK debug output inside the test workspace to avoid HOME write restrictions.
 const claudeConfigDir =
@@ -14,11 +14,11 @@ mkdirSync(join(claudeConfigDir, "debug"), { recursive: true });
 // Mock console methods to reduce noise in tests
 global.console = {
 	...console,
-	log: vi.fn(),
-	debug: vi.fn(),
-	info: vi.fn(),
-	warn: vi.fn(),
-	error: vi.fn(),
+	log: mock(),
+	debug: mock(),
+	info: mock(),
+	warn: mock(),
+	error: mock(),
 };
 
 // Mock webhook event helpers - updated to match native webhook format
@@ -194,5 +194,5 @@ export const mockClaudeResultMessage = (
 
 // Reset all mocks after each test
 afterEach(() => {
-	vi.clearAllMocks();
+	mock.restore();
 });

@@ -2,8 +2,8 @@
  * Unit tests for GlobalSessionRegistry
  */
 
+import { beforeEach, describe, expect, it, jest, mock } from "bun:test";
 import type { SylasAgentSession, SylasAgentSessionEntry } from "@sylas/core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GlobalSessionRegistry } from "../src/GlobalSessionRegistry.js";
 
 describe("GlobalSessionRegistry", () => {
@@ -76,7 +76,7 @@ describe("GlobalSessionRegistry", () => {
 
 		it("should emit sessionCreated event", () => {
 			const session = createMockSession("session-1");
-			const listener = vi.fn();
+			const listener = mock();
 			registry.on("sessionCreated", listener);
 
 			registry.createSession(session);
@@ -117,7 +117,7 @@ describe("GlobalSessionRegistry", () => {
 			const session = createMockSession("session-1");
 			registry.createSession(session);
 
-			const listener = vi.fn();
+			const listener = mock();
 			registry.on("sessionUpdated", listener);
 
 			const updates = { status: "complete" as const };
@@ -134,7 +134,7 @@ describe("GlobalSessionRegistry", () => {
 			const session = createMockSession("session-1");
 			registry.createSession(session);
 
-			const listener = vi.fn();
+			const listener = mock();
 			registry.on("sessionCompleted", listener);
 
 			registry.updateSession("session-1", { status: "complete" });
@@ -149,7 +149,7 @@ describe("GlobalSessionRegistry", () => {
 			const session = createMockSession("session-1");
 			registry.createSession(session);
 
-			const listener = vi.fn();
+			const listener = mock();
 			registry.on("sessionCompleted", listener);
 
 			registry.updateSession("session-1", { status: "error" });
@@ -164,7 +164,7 @@ describe("GlobalSessionRegistry", () => {
 			const session = createMockSession("session-1");
 			registry.createSession(session);
 
-			const listener = vi.fn();
+			const listener = mock();
 			registry.on("sessionCompleted", listener);
 
 			registry.updateSession("session-1", { status: "paused" });
@@ -247,8 +247,8 @@ describe("GlobalSessionRegistry", () => {
 			const originalUpdatedAt = session!.updatedAt;
 
 			// Wait a bit to ensure timestamp difference
-			vi.useFakeTimers();
-			vi.advanceTimersByTime(100);
+			jest.useFakeTimers();
+			jest.advanceTimersByTime(100);
 
 			const entry = createMockEntry("user", "Hello");
 			registry.addEntry("session-1", entry);
@@ -256,7 +256,7 @@ describe("GlobalSessionRegistry", () => {
 			const updated = registry.getSession("session-1");
 			expect(updated!.updatedAt).toBeGreaterThan(originalUpdatedAt);
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 
 		it("should get entries for session", () => {
@@ -314,15 +314,15 @@ describe("GlobalSessionRegistry", () => {
 			const session = registry.getSession("session-1");
 			const originalUpdatedAt = session!.updatedAt;
 
-			vi.useFakeTimers();
-			vi.advanceTimersByTime(100);
+			jest.useFakeTimers();
+			jest.advanceTimersByTime(100);
 
 			registry.updateEntry("session-1", 0, { content: "Updated" });
 
 			const updated = registry.getSession("session-1");
 			expect(updated!.updatedAt).toBeGreaterThan(originalUpdatedAt);
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 	});
 
@@ -403,8 +403,8 @@ describe("GlobalSessionRegistry", () => {
 
 		it("should exclude non-serializable agentRunner", () => {
 			const mockRunner = {
-				execute: vi.fn(),
-				stop: vi.fn(),
+				execute: mock(),
+				stop: mock(),
 			};
 			const session = createMockSession("session-1", {
 				agentRunner: mockRunner as any,
@@ -485,16 +485,16 @@ describe("GlobalSessionRegistry", () => {
 
 	describe("Cleanup", () => {
 		it("should remove old sessions", () => {
-			vi.useFakeTimers();
+			jest.useFakeTimers();
 			const now = Date.now();
 
 			// Create old session
-			vi.setSystemTime(now - 2 * 60 * 60 * 1000); // 2 hours ago
+			jest.setSystemTime(now - 2 * 60 * 60 * 1000); // 2 hours ago
 			const oldSession = createMockSession("old-session");
 			registry.createSession(oldSession);
 
 			// Create recent session
-			vi.setSystemTime(now);
+			jest.setSystemTime(now);
 			const recentSession = createMockSession("recent-session");
 			registry.createSession(recentSession);
 
@@ -505,78 +505,78 @@ describe("GlobalSessionRegistry", () => {
 			expect(registry.getSession("old-session")).toBeUndefined();
 			expect(registry.getSession("recent-session")).toBeDefined();
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 
 		it("should remove entries when cleaning up sessions", () => {
-			vi.useFakeTimers();
+			jest.useFakeTimers();
 			const now = Date.now();
 
-			vi.setSystemTime(now - 2 * 60 * 60 * 1000);
+			jest.setSystemTime(now - 2 * 60 * 60 * 1000);
 			const oldSession = createMockSession("old-session");
 			registry.createSession(oldSession);
 			registry.addEntry("old-session", createMockEntry("user", "Hello"));
 
-			vi.setSystemTime(now);
+			jest.setSystemTime(now);
 			registry.cleanup(60 * 60 * 1000);
 
 			expect(registry.getEntries("old-session")).toEqual([]);
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 
 		it("should clean up parent-child mappings", () => {
-			vi.useFakeTimers();
+			jest.useFakeTimers();
 			const now = Date.now();
 
-			vi.setSystemTime(now - 2 * 60 * 60 * 1000);
+			jest.setSystemTime(now - 2 * 60 * 60 * 1000);
 			const oldParent = createMockSession("old-parent");
 			const oldChild = createMockSession("old-child");
 			registry.createSession(oldParent);
 			registry.createSession(oldChild);
 			registry.setParentSession("old-child", "old-parent");
 
-			vi.setSystemTime(now);
+			jest.setSystemTime(now);
 			registry.cleanup(60 * 60 * 1000);
 
 			expect(registry.getParentSessionId("old-child")).toBeUndefined();
 			expect(registry.getChildSessionIds("old-parent")).toEqual([]);
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 
 		it("should return count of removed sessions", () => {
-			vi.useFakeTimers();
+			jest.useFakeTimers();
 			const now = Date.now();
 
-			vi.setSystemTime(now - 2 * 60 * 60 * 1000);
+			jest.setSystemTime(now - 2 * 60 * 60 * 1000);
 			registry.createSession(createMockSession("old-1"));
 			registry.createSession(createMockSession("old-2"));
 			registry.createSession(createMockSession("old-3"));
 
-			vi.setSystemTime(now);
+			jest.setSystemTime(now);
 			const removed = registry.cleanup(60 * 60 * 1000);
 
 			expect(removed).toBe(3);
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 
 		it("should not remove sessions within max age", () => {
-			vi.useFakeTimers();
+			jest.useFakeTimers();
 			const now = Date.now();
 
-			vi.setSystemTime(now - 30 * 60 * 1000); // 30 minutes ago
+			jest.setSystemTime(now - 30 * 60 * 1000); // 30 minutes ago
 			const session = createMockSession("session-1");
 			registry.createSession(session);
 
-			vi.setSystemTime(now);
+			jest.setSystemTime(now);
 			const removed = registry.cleanup(60 * 60 * 1000); // 1 hour
 
 			expect(removed).toBe(0);
 			expect(registry.getSession("session-1")).toBeDefined();
 
-			vi.useRealTimers();
+			jest.useRealTimers();
 		});
 	});
 
@@ -623,8 +623,8 @@ describe("GlobalSessionRegistry", () => {
 		});
 
 		it("should handle multiple event listeners", () => {
-			const listener1 = vi.fn();
-			const listener2 = vi.fn();
+			const listener1 = mock();
+			const listener2 = mock();
 			registry.on("sessionCreated", listener1);
 			registry.on("sessionCreated", listener2);
 

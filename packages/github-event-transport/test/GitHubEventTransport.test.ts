@@ -1,5 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { createHmac } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GitHubEventTransport } from "../src/GitHubEventTransport.js";
 import type { GitHubEventTransportConfig } from "../src/types.js";
 import { issueCommentPayload, prReviewCommentPayload } from "./fixtures.js";
@@ -13,7 +13,7 @@ function createMockFastify() {
 		(request: unknown, reply: unknown) => Promise<void>
 	> = {};
 	return {
-		post: vi.fn((path: string, ...args: unknown[]) => {
+		post: mock((path: string, ...args: unknown[]) => {
 			// Handle both (path, handler) and (path, options, handler) signatures
 			const handler =
 				args.length === 1
@@ -45,8 +45,8 @@ function createMockRequest(
  */
 function createMockReply() {
 	const reply = {
-		code: vi.fn().mockReturnThis(),
-		send: vi.fn().mockReturnThis(),
+		code: mock().mockReturnThis(),
+		send: mock().mockReturnThis(),
 	};
 	return reply;
 }
@@ -56,12 +56,12 @@ describe("GitHubEventTransport", () => {
 	const testSecret = "test-webhook-secret-123";
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		mockFastify = createMockFastify();
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("register", () => {
@@ -117,7 +117,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("accepts valid Bearer token and emits event", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(issueCommentPayload, {
@@ -190,7 +190,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("accepts valid HMAC-SHA256 signature and emits event", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(issueCommentPayload, {
@@ -263,7 +263,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("ignores unsupported event types", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(
@@ -304,7 +304,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("ignores non-created actions (edited, deleted)", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const editedPayload = {
@@ -331,7 +331,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("processes pull_request_review_comment events", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(prReviewCommentPayload, {
@@ -355,7 +355,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("extracts installation token from X-GitHub-Installation-Token header", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const installationToken = "ghs_test_installation_token_12345";
@@ -383,7 +383,7 @@ describe("GitHubEventTransport", () => {
 		});
 
 		it("includes undefined installationToken when header is not present", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(issueCommentPayload, {
@@ -448,7 +448,7 @@ describe("GitHubEventTransport", () => {
 			const transport = new GitHubEventTransport(config);
 			transport.register();
 
-			const errorListener = vi.fn();
+			const errorListener = mock();
 			transport.on("error", errorListener);
 
 			// Create a request without authorization header AND with a body

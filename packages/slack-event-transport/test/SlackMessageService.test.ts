@@ -1,20 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { SlackMessageService } from "../src/SlackMessageService.js";
 
 // Mock global fetch
-const mockFetch = vi.fn();
+const mockFetch = mock();
 global.fetch = mockFetch;
 
 describe("SlackMessageService", () => {
 	let service: SlackMessageService;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
+		mockFetch.mockClear?.();
+		global.fetch = mockFetch;
 		service = new SlackMessageService();
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("postMessage", () => {

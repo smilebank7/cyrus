@@ -8,7 +8,6 @@
 
 import type Fastify from "fastify";
 import fastify from "fastify";
-import { describe, expect, it } from "vitest";
 import { CLIIssueTrackerService } from "../src/issue-tracker/adapters/CLIIssueTrackerService.js";
 import { CLIRPCServer } from "../src/issue-tracker/adapters/CLIRPCServer.js";
 import { AgentActivityType } from "../src/issue-tracker/types.js";

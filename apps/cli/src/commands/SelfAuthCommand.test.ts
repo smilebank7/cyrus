@@ -1,31 +1,29 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// Use vi.hoisted to create mock functions that can be used in vi.mock
-const mocks = vi.hoisted(() => ({
-	mockReadFileSync: vi.fn(),
-	mockWriteFileSync: vi.fn(),
-	mockOpen: vi.fn(),
-	mockFetch: vi.fn(),
+const mocks = {
+	mockReadFileSync: mock(),
+	mockWriteFileSync: mock(),
+	mockOpen: mock(),
+	mockFetch: mock(),
 	mockFastifyInstance: {
-		get: vi.fn(),
-		listen: vi.fn(),
-		close: vi.fn(),
+		get: mock(),
+		listen: mock(),
+		close: mock(),
 	},
-	mockFastify: vi.fn(),
-}));
+	mockFastify: mock(),
+};
 
 // Mock modules
-vi.mock("node:fs", () => ({
+mock.module("node:fs", () => ({
+	...require("node:fs"),
 	readFileSync: mocks.mockReadFileSync,
 	writeFileSync: mocks.mockWriteFileSync,
 }));
 
 // Mock Fastify
-vi.mock("fastify", () => ({
+mock.module("fastify", () => ({
 	default: mocks.mockFastify,
 }));
 
-vi.mock("open", () => ({
+mock.module("open", () => ({
 	default: mocks.mockOpen,
 }));
 
@@ -39,25 +37,32 @@ const mockLinearClient = {
 	}),
 };
 
-vi.mock("@linear/sdk", async (importOriginal) => {
-	const actual = await importOriginal();
+mock.module("@linear/sdk", () => {
+	const actual = require("@linear/sdk");
 	return {
 		...(actual as object),
-		LinearClient: vi.fn(() => mockLinearClient),
+		LinearClient: mock(() => mockLinearClient),
 	};
 });
 
 // Mock process.exit
-const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
+const mockExit = spyOn(process, "exit").mockImplementation(() => {
 	throw new Error("process.exit called");
 });
 
 // Mock console methods
-const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
-const _mockConsoleError = vi
-	.spyOn(console, "error")
-	.mockImplementation(() => {});
+const mockConsoleLog = spyOn(console, "log").mockImplementation(() => {});
+const _mockConsoleError = spyOn(console, "error").mockImplementation(() => {});
 
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 // Import after mocks
 import { SelfAuthCommand } from "./SelfAuthCommand.js";
 
@@ -67,17 +72,17 @@ type RouteHandler = (...args: unknown[]) => unknown;
 const createMockApp = () => ({
 	sylasHome: "/home/user/.sylas",
 	config: {
-		exists: vi.fn().mockReturnValue(true),
-		load: vi.fn(),
-		update: vi.fn(),
+		exists: mock().mockReturnValue(true),
+		load: mock(),
+		update: mock(),
 	},
-	getProxyUrl: vi.fn().mockReturnValue("https://proxy.example.com"),
+	getProxyUrl: mock().mockReturnValue("https://proxy.example.com"),
 	logger: {
-		info: vi.fn(),
-		error: vi.fn(),
-		warn: vi.fn(),
-		success: vi.fn(),
-		divider: vi.fn(),
+		info: mock(),
+		error: mock(),
+		warn: mock(),
+		success: mock(),
+		divider: mock(),
 	},
 });
 
@@ -87,7 +92,7 @@ describe("SelfAuthCommand", () => {
 	let originalEnv: NodeJS.ProcessEnv;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		mockApp = createMockApp();
 		command = new SelfAuthCommand(mockApp as any);
 		originalEnv = { ...process.env };
@@ -238,9 +243,9 @@ describe("SelfAuthCommand", () => {
 						query: { code: "test-auth-code" },
 					};
 					const mockReply = {
-						type: vi.fn().mockReturnThis(),
-						code: vi.fn().mockReturnThis(),
-						send: vi.fn().mockReturnThis(),
+						type: mock().mockReturnThis(),
+						code: mock().mockReturnThis(),
+						send: mock().mockReturnThis(),
 					};
 					await routeHandler(mockRequest, mockReply);
 				}, 10);
@@ -284,9 +289,9 @@ describe("SelfAuthCommand", () => {
 						query: { error: "access_denied" },
 					};
 					const mockReply = {
-						type: vi.fn().mockReturnThis(),
-						code: vi.fn().mockReturnThis(),
-						send: vi.fn().mockReturnThis(),
+						type: mock().mockReturnThis(),
+						code: mock().mockReturnThis(),
+						send: mock().mockReturnThis(),
 					};
 					await routeHandler(mockRequest, mockReply);
 				}, 10);
@@ -325,9 +330,9 @@ describe("SelfAuthCommand", () => {
 				setTimeout(async () => {
 					const mockRequest = { query: { code: "auth-code-123" } };
 					const mockReply = {
-						type: vi.fn().mockReturnThis(),
-						code: vi.fn().mockReturnThis(),
-						send: vi.fn().mockReturnThis(),
+						type: mock().mockReturnThis(),
+						code: mock().mockReturnThis(),
+						send: mock().mockReturnThis(),
 					};
 					await routeHandler(mockRequest, mockReply);
 				}, 10);
@@ -376,9 +381,9 @@ describe("SelfAuthCommand", () => {
 				setTimeout(async () => {
 					const mockRequest = { query: { code: "auth-code" } };
 					const mockReply = {
-						type: vi.fn().mockReturnThis(),
-						code: vi.fn().mockReturnThis(),
-						send: vi.fn().mockReturnThis(),
+						type: mock().mockReturnThis(),
+						code: mock().mockReturnThis(),
+						send: mock().mockReturnThis(),
 					};
 					await routeHandler(mockRequest, mockReply);
 				}, 10);
@@ -426,9 +431,9 @@ describe("SelfAuthCommand", () => {
 				setTimeout(async () => {
 					const mockRequest = { query: { code: "code" } };
 					const mockReply = {
-						type: vi.fn().mockReturnThis(),
-						code: vi.fn().mockReturnThis(),
-						send: vi.fn().mockReturnThis(),
+						type: mock().mockReturnThis(),
+						code: mock().mockReturnThis(),
+						send: mock().mockReturnThis(),
 					};
 					await routeHandler(mockRequest, mockReply);
 				}, 10);
@@ -494,9 +499,9 @@ describe("SelfAuthCommand", () => {
 				setTimeout(async () => {
 					const mockRequest = { query: { code: "code" } };
 					const mockReply = {
-						type: vi.fn().mockReturnThis(),
-						code: vi.fn().mockReturnThis(),
-						send: vi.fn().mockReturnThis(),
+						type: mock().mockReturnThis(),
+						code: mock().mockReturnThis(),
+						send: mock().mockReturnThis(),
 					};
 					await routeHandler(mockRequest, mockReply);
 				}, 10);

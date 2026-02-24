@@ -2,30 +2,36 @@
  * Tests for PersistenceManager v2.0 to v3.0 migration
  */
 
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	PERSISTENCE_VERSION,
 	PersistenceManager,
 } from "../src/PersistenceManager.js";
 
 // Mock fs modules
-vi.mock("node:fs", () => ({
-	existsSync: vi.fn(),
+mock.module("node:fs", () => ({
+	...require("node:fs"),
+	existsSync: mock(),
 }));
 
-vi.mock("node:fs/promises", () => ({
-	mkdir: vi.fn(),
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
+mock.module("node:fs/promises", () => ({
+	...require("node:fs/promises"),
+	mkdir: mock(),
+	readFile: mock(),
+	writeFile: mock(),
 }));
 
 describe("PersistenceManager", () => {
 	let persistenceManager: PersistenceManager;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
+		(existsSync as any).mockClear?.();
+		(readFile as any).mockClear?.();
+		(writeFile as any).mockClear?.();
+		(mkdir as any).mockClear?.();
 		persistenceManager = new PersistenceManager("/tmp/test-sylas");
 	});
 
@@ -79,10 +85,10 @@ describe("PersistenceManager", () => {
 		};
 
 		it("should migrate v2.0 state to v3.0 format", async () => {
-			vi.mocked(existsSync).mockReturnValue(true);
-			vi.mocked(readFile).mockResolvedValue(JSON.stringify(v2State));
-			vi.mocked(writeFile).mockResolvedValue(undefined);
-			vi.mocked(mkdir).mockResolvedValue(undefined);
+			(existsSync as any).mockReturnValue(true);
+			(readFile as any).mockResolvedValue(JSON.stringify(v2State));
+			(writeFile as any).mockResolvedValue(undefined);
+			(mkdir as any).mockResolvedValue(undefined);
 
 			const result = await persistenceManager.loadEdgeWorkerState();
 
@@ -124,26 +130,26 @@ describe("PersistenceManager", () => {
 		});
 
 		it("should save migrated state as v3.0", async () => {
-			vi.mocked(existsSync).mockReturnValue(true);
-			vi.mocked(readFile).mockResolvedValue(JSON.stringify(v2State));
-			vi.mocked(writeFile).mockResolvedValue(undefined);
-			vi.mocked(mkdir).mockResolvedValue(undefined);
+			(existsSync as any).mockReturnValue(true);
+			(readFile as any).mockResolvedValue(JSON.stringify(v2State));
+			(writeFile as any).mockResolvedValue(undefined);
+			(mkdir as any).mockResolvedValue(undefined);
 
 			await persistenceManager.loadEdgeWorkerState();
 
 			// Verify writeFile was called with v3.0 version
 			expect(writeFile).toHaveBeenCalled();
 			const savedData = JSON.parse(
-				vi.mocked(writeFile).mock.calls[0][1] as string,
+				(writeFile as any).mock.calls[0][1] as string,
 			);
 			expect(savedData.version).toBe(PERSISTENCE_VERSION);
 		});
 
 		it("should preserve entries and child-to-parent mappings during migration", async () => {
-			vi.mocked(existsSync).mockReturnValue(true);
-			vi.mocked(readFile).mockResolvedValue(JSON.stringify(v2State));
-			vi.mocked(writeFile).mockResolvedValue(undefined);
-			vi.mocked(mkdir).mockResolvedValue(undefined);
+			(existsSync as any).mockReturnValue(true);
+			(readFile as any).mockResolvedValue(JSON.stringify(v2State));
+			(writeFile as any).mockResolvedValue(undefined);
+			(mkdir as any).mockResolvedValue(undefined);
 
 			const result = await persistenceManager.loadEdgeWorkerState();
 
@@ -170,10 +176,8 @@ describe("PersistenceManager", () => {
 				state: {},
 			};
 
-			vi.mocked(existsSync).mockReturnValue(true);
-			vi.mocked(readFile).mockResolvedValue(
-				JSON.stringify(unknownVersionState),
-			);
+			(existsSync as any).mockReturnValue(true);
+			(readFile as any).mockResolvedValue(JSON.stringify(unknownVersionState));
 
 			const result = await persistenceManager.loadEdgeWorkerState();
 
@@ -187,8 +191,8 @@ describe("PersistenceManager", () => {
 				// Missing state property
 			};
 
-			vi.mocked(existsSync).mockReturnValue(true);
-			vi.mocked(readFile).mockResolvedValue(JSON.stringify(invalidState));
+			(existsSync as any).mockReturnValue(true);
+			(readFile as any).mockResolvedValue(JSON.stringify(invalidState));
 
 			const result = await persistenceManager.loadEdgeWorkerState();
 
@@ -216,8 +220,8 @@ describe("PersistenceManager", () => {
 				},
 			};
 
-			vi.mocked(existsSync).mockReturnValue(true);
-			vi.mocked(readFile).mockResolvedValue(JSON.stringify(v3State));
+			(existsSync as any).mockReturnValue(true);
+			(readFile as any).mockResolvedValue(JSON.stringify(v3State));
 
 			const result = await persistenceManager.loadEdgeWorkerState();
 

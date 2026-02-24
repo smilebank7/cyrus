@@ -1,9 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 // Mock dependencies BEFORE imports
-vi.mock("sylas-claude-runner", () => ({
-	ClaudeRunner: vi.fn(),
-	getSafeTools: vi.fn(() => [
+mock.module("sylas-claude-runner", () => ({
+	ClaudeRunner: mock(),
+	getSafeTools: mock(() => [
 		"Read",
 		"Edit",
 		"Task",
@@ -15,7 +13,7 @@ vi.mock("sylas-claude-runner", () => ({
 		"NotebookEdit",
 		"Batch",
 	]),
-	getReadOnlyTools: vi.fn(() => [
+	getReadOnlyTools: mock(() => [
 		"Read",
 		"WebFetch",
 		"WebSearch",
@@ -24,7 +22,7 @@ vi.mock("sylas-claude-runner", () => ({
 		"Task",
 		"Batch",
 	]),
-	getAllTools: vi.fn(() => [
+	getAllTools: mock(() => [
 		"Read",
 		"Edit",
 		"Task",
@@ -38,17 +36,39 @@ vi.mock("sylas-claude-runner", () => ({
 		"Bash",
 	]),
 }));
-vi.mock("@linear/sdk");
-vi.mock("sylas-linear-event-transport");
-vi.mock("../src/SharedApplicationServer.js");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("fs/promises", () => ({
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	rename: vi.fn(),
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("sylas-linear-event-transport", () => ({
+	...require("sylas-linear-event-transport"),
+	LinearEventTransport: mock(),
+}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	...require("../src/SharedApplicationServer.js"),
+	SharedApplicationServer: mock(),
+}));
+mock.module("../src/AgentSessionManager.js", () => ({
+	...require("../src/AgentSessionManager.js"),
+	AgentSessionManager: mock(),
+}));
+mock.module("fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock(),
+	writeFile: mock(),
+	mkdir: mock(),
+	rename: mock(),
 }));
 
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { readFile } from "node:fs/promises";
 import { LinearClient } from "@linear/sdk";
 import {
@@ -67,12 +87,12 @@ describe("EdgeWorker - Dynamic Tools Configuration", () => {
 	let mockConfig: EdgeWorkerConfig;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Mock console methods
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "warn").mockImplementation(() => {});
 
 		// Create mock configuration
 		mockConfig = {
@@ -94,59 +114,60 @@ describe("EdgeWorker - Dynamic Tools Configuration", () => {
 		};
 
 		// Mock SharedApplicationServer
-		vi.mocked(SharedApplicationServer).mockImplementation(
+		(SharedApplicationServer as any).mockImplementation(
 			() =>
 				({
-					start: vi.fn().mockResolvedValue(undefined),
-					stop: vi.fn().mockResolvedValue(undefined),
-					getFastifyInstance: vi.fn().mockReturnValue({ post: vi.fn() }),
-					getWebhookUrl: vi
-						.fn()
-						.mockReturnValue("http://localhost:3456/webhook"),
-					setWebhookHandler: vi.fn(),
-					setOAuthCallbackHandler: vi.fn(),
+					start: mock().mockResolvedValue(undefined),
+					stop: mock().mockResolvedValue(undefined),
+					getFastifyInstance: mock().mockReturnValue({ post: mock() }),
+					getWebhookUrl: mock().mockReturnValue(
+						"http://localhost:3456/webhook",
+					),
+					setWebhookHandler: mock(),
+					setOAuthCallbackHandler: mock(),
 				}) as any,
 		);
 
 		// Mock AgentSessionManager
-		vi.mocked(AgentSessionManager).mockImplementation(
+		(AgentSessionManager as any).mockImplementation(
 			() =>
 				({
-					addSession: vi.fn(),
-					getSession: vi.fn(),
-					removeSession: vi.fn(),
-					getAllSessions: vi.fn().mockReturnValue([]),
-					clearAllSessions: vi.fn(),
-					on: vi.fn(), // EventEmitter method
+					addSession: mock(),
+					getSession: mock(),
+					removeSession: mock(),
+					getAllSessions: mock().mockReturnValue([]),
+					clearAllSessions: mock(),
+					on: mock(), // EventEmitter method
 				}) as any,
 		);
 
 		// Mock LinearEventTransport
-		vi.mocked(LinearEventTransport).mockImplementation(
+		(LinearEventTransport as any).mockImplementation(
 			() =>
 				({
-					register: vi.fn(),
-					on: vi.fn(),
-					removeAllListeners: vi.fn(),
+					register: mock(),
+					on: mock(),
+					removeAllListeners: mock(),
 				}) as any,
 		);
 
 		// Mock LinearClient
-		vi.mocked(LinearClient).mockImplementation(
+		(LinearClient as any).mockImplementation(
 			() =>
 				({
-					viewer: vi
-						.fn()
-						.mockResolvedValue({ id: "test-user", email: "test@example.com" }),
-					issue: vi.fn(),
-					comment: vi.fn(),
-					createComment: vi.fn(),
-					webhook: vi.fn(),
-					webhooks: vi.fn(),
-					createWebhook: vi.fn(),
-					updateWebhook: vi.fn(),
-					deleteWebhook: vi.fn(),
-					user: vi.fn(),
+					viewer: mock().mockResolvedValue({
+						id: "test-user",
+						email: "test@example.com",
+					}),
+					issue: mock(),
+					comment: mock(),
+					createComment: mock(),
+					webhook: mock(),
+					webhooks: mock(),
+					createWebhook: mock(),
+					updateWebhook: mock(),
+					deleteWebhook: mock(),
+					user: mock(),
 				}) as any,
 		);
 
@@ -154,7 +175,7 @@ describe("EdgeWorker - Dynamic Tools Configuration", () => {
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("buildAllowedTools", () => {
@@ -387,7 +408,7 @@ describe("EdgeWorker - Dynamic Tools Configuration", () => {
 
 		beforeEach(() => {
 			// Mock file system for prompt templates
-			vi.mocked(readFile).mockImplementation(async (path: string) => {
+			(readFile as any).mockImplementation(async (path: string) => {
 				if (path.includes("debugger.md")) {
 					return 'Debugger prompt content\n<version-tag value="debugger-v1.0.0" />';
 				}

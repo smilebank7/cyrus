@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { SlackEventTransport } from "../src/SlackEventTransport.js";
 import type { SlackEventTransportConfig } from "../src/types.js";
 import {
@@ -16,7 +16,7 @@ function createMockFastify() {
 		(request: unknown, reply: unknown) => Promise<void>
 	> = {};
 	return {
-		post: vi.fn(
+		post: mock(
 			(
 				path: string,
 				handler: (request: unknown, reply: unknown) => Promise<void>,
@@ -46,8 +46,8 @@ function createMockRequest(
  */
 function createMockReply() {
 	const reply = {
-		code: vi.fn().mockReturnThis(),
-		send: vi.fn().mockReturnThis(),
+		code: mock().mockReturnThis(),
+		send: mock().mockReturnThis(),
 	};
 	return reply;
 }
@@ -57,12 +57,12 @@ describe("SlackEventTransport", () => {
 	const testSecret = "test-webhook-secret-123";
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		mockFastify = createMockFastify();
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("register", () => {
@@ -99,7 +99,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("accepts valid Bearer token and emits event", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(testEventEnvelope, {
@@ -180,7 +180,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("emits message event with translated InternalMessage", async () => {
-			const messageListener = vi.fn();
+			const messageListener = mock();
 			transport.on("message", messageListener);
 
 			const request = createMockRequest(testEventEnvelope, {
@@ -201,7 +201,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("processes threaded app_mention events", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const request = createMockRequest(testThreadedEventEnvelope, {
@@ -225,7 +225,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("reads Slack Bot token from SLACK_BOT_TOKEN environment variable", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const envBotToken = "xoxb-env-token-98765";
@@ -252,7 +252,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("sets slackBotToken to undefined when SLACK_BOT_TOKEN env var is not set", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			delete process.env.SLACK_BOT_TOKEN;
@@ -274,7 +274,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("ignores unsupported envelope types", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const unsupportedEnvelope = {
@@ -298,7 +298,7 @@ describe("SlackEventTransport", () => {
 		});
 
 		it("ignores events with non-app_mention type", async () => {
-			const eventListener = vi.fn();
+			const eventListener = mock();
 			transport.on("event", eventListener);
 
 			const envelope = {
@@ -358,7 +358,7 @@ describe("SlackEventTransport", () => {
 			const transport = new SlackEventTransport(config);
 			transport.register();
 
-			const errorListener = vi.fn();
+			const errorListener = mock();
 			transport.on("error", errorListener);
 
 			const request = {

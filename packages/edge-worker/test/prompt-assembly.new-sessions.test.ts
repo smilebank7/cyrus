@@ -4,7 +4,6 @@
  * Tests prompt assembly for new (initial) sessions with full issue context.
  */
 
-import { describe, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - New Sessions", () => {

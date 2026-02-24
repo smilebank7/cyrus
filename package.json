@@ -3,18 +3,21 @@
 	"version": "1.0.1",
 	"private": true,
 	"description": "Monorepo for Sylas - Linear Claude Agent integration",
-	"packageManager": "pnpm@10.13.1",
 	"type": "module",
+	"workspaces": [
+		"packages/*",
+		"apps/*"
+	],
 	"scripts": {
-		"build": "pnpm -r --filter='!@sylas/electron' build",
-		"dev": "pnpm -r --parallel dev",
-		"test": "pnpm -r test",
+		"build": "bun run --filter='*' build",
+		"dev": "bun run --filter='*' dev",
+		"test": "bun run --filter='*' test",
 		"lint": "biome check",
 		"format": "biome check --write --unsafe",
-		"test:packages": "pnpm --filter './packages/*' test",
-		"test:packages:run": "pnpm --filter './packages/*' test:run",
-		"test:apps": "pnpm --filter './apps/*' test",
-		"typecheck": "pnpm -r typecheck",
+		"test:packages": "bun run --filter './packages/*' test",
+		"test:packages:run": "bun run --filter './packages/*' test:run",
+		"test:apps": "bun run --filter './apps/*' test",
+		"typecheck": "bun run --filter='*' typecheck",
 		"prepare": "husky"
 	},
 	"keywords": [
@@ -42,15 +45,21 @@
 	"dependencies": {
 		"@linear/sdk": "60.0.0"
 	},
-	"pnpm": {
-		"overrides": {
-			"jws": ">=4.0.1",
-			"@modelcontextprotocol/sdk": ">=1.25.2",
-			"semver": ">=7.5.2",
-			"qs": ">=6.14.1",
-			"vite": ">=7.1.11"
-		}
+	"overrides": {
+		"jws": ">=4.0.1",
+		"@modelcontextprotocol/sdk": ">=1.25.2",
+		"semver": ">=7.5.2",
+		"qs": ">=6.14.1"
 	},
+	"trustedDependencies": [
+		"@tailwindcss/oxide",
+		"core-js",
+		"electron",
+		"electron-winstaller",
+		"esbuild",
+		"sharp",
+		"workerd"
+	],
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx,json}": [
 			"biome check --write --unsafe"

@@ -1,3 +1,12 @@
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { readFile } from "node:fs/promises";
 import { LinearClient } from "@linear/sdk";
 import { ClaudeRunner, type HookCallbackMatcher } from "sylas-claude-runner";
@@ -9,42 +18,63 @@ import {
 import { GeminiRunner } from "sylas-gemini-runner";
 import { LinearEventTransport } from "sylas-linear-event-transport";
 import { OpenCodeRunner } from "sylas-opencode-runner";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { SharedApplicationServer } from "../src/SharedApplicationServer.js";
 import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock fs/promises
-vi.mock("fs/promises", () => ({
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	rename: vi.fn(),
+mock.module("fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock(),
+	writeFile: mock(),
+	mkdir: mock(),
+	rename: mock(),
 }));
 
 // Mock dependencies
-vi.mock("sylas-claude-runner");
-vi.mock("sylas-codex-runner");
-vi.mock("sylas-gemini-runner");
-vi.mock("sylas-linear-event-transport");
-vi.mock("sylas-opencode-runner");
-vi.mock("@linear/sdk");
-vi.mock("../src/SharedApplicationServer.js");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = (await importOriginal()) as any;
+mock.module("sylas-claude-runner", () => ({
+	...require("sylas-claude-runner"),
+	ClaudeRunner: mock(),
+}));
+mock.module("sylas-codex-runner", () => ({}));
+mock.module("sylas-gemini-runner", () => ({
+	...require("sylas-gemini-runner"),
+	GeminiRunner: mock(),
+}));
+mock.module("sylas-linear-event-transport", () => ({
+	...require("sylas-linear-event-transport"),
+	LinearEventTransport: mock(),
+}));
+mock.module("sylas-opencode-runner", () => ({
+	...require("sylas-opencode-runner"),
+	OpenCodeRunner: mock(),
+}));
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	...require("../src/SharedApplicationServer.js"),
+	SharedApplicationServer: mock(),
+}));
+mock.module("../src/AgentSessionManager.js", () => ({
+	...require("../src/AgentSessionManager.js"),
+	AgentSessionManager: mock(),
+}));
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core") as any;
 	return {
 		...actual,
-		isAgentSessionCreatedWebhook: vi.fn(),
-		isAgentSessionPromptedWebhook: vi.fn(),
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		isAgentSessionCreatedWebhook: mock(),
+		isAgentSessionPromptedWebhook: mock(),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
-vi.mock("file-type");
+mock.module("file-type", () => ({}));
 
 /**
  * Test suite for screenshot upload guidance hooks
@@ -89,50 +119,50 @@ describe("EdgeWorker - Screenshot Upload Guidance Hooks", () => {
 			branchName: "test-branch",
 			state: { name: "Todo" },
 			team: { id: "team-123" },
-			labels: vi.fn().mockResolvedValue({
+			labels: mock().mockResolvedValue({
 				nodes: labels.map((name) => ({ name })),
 			}),
 		};
 	}
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		capturedRunnerConfig = null;
 
 		// Mock console methods
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "warn").mockImplementation(() => {});
 
 		// Mock LinearClient
 		mockLinearClient = {
-			issue: vi.fn(),
-			workflowStates: vi.fn().mockResolvedValue({
+			issue: mock(),
+			workflowStates: mock().mockResolvedValue({
 				nodes: [
 					{ id: "state-1", name: "Todo", type: "unstarted", position: 0 },
 					{ id: "state-2", name: "In Progress", type: "started", position: 1 },
 				],
 			}),
-			updateIssue: vi.fn().mockResolvedValue({ success: true }),
-			createAgentActivity: vi.fn().mockResolvedValue({ success: true }),
-			comments: vi.fn().mockResolvedValue({ nodes: [] }),
-			rawRequest: vi.fn(),
+			updateIssue: mock().mockResolvedValue({ success: true }),
+			createAgentActivity: mock().mockResolvedValue({ success: true }),
+			comments: mock().mockResolvedValue({ nodes: [] }),
+			rawRequest: mock(),
 		};
-		vi.mocked(LinearClient).mockImplementation(() => mockLinearClient);
+		(LinearClient as any).mockImplementation(() => mockLinearClient);
 
 		// Mock ClaudeRunner - capture config for hook inspection
 		mockClaudeRunner = {
 			supportsStreamingInput: true,
-			start: vi.fn().mockResolvedValue({ sessionId: "claude-session-123" }),
-			startStreaming: vi
-				.fn()
-				.mockResolvedValue({ sessionId: "claude-session-123" }),
-			stop: vi.fn(),
-			isStreaming: vi.fn().mockReturnValue(false),
-			addStreamMessage: vi.fn(),
-			updatePromptVersions: vi.fn(),
+			start: mock().mockResolvedValue({ sessionId: "claude-session-123" }),
+			startStreaming: mock().mockResolvedValue({
+				sessionId: "claude-session-123",
+			}),
+			stop: mock(),
+			isStreaming: mock().mockReturnValue(false),
+			addStreamMessage: mock(),
+			updatePromptVersions: mock(),
 		};
-		vi.mocked(ClaudeRunner).mockImplementation((config: any) => {
+		(ClaudeRunner as any).mockImplementation((config: any) => {
 			capturedRunnerConfig = config;
 			return mockClaudeRunner;
 		});
@@ -140,85 +170,85 @@ describe("EdgeWorker - Screenshot Upload Guidance Hooks", () => {
 		// Mock GeminiRunner
 		mockGeminiRunner = {
 			supportsStreamingInput: false,
-			start: vi.fn().mockResolvedValue({ sessionId: "gemini-session-123" }),
-			startStreaming: vi
-				.fn()
-				.mockResolvedValue({ sessionId: "gemini-session-123" }),
-			stop: vi.fn(),
-			isStreaming: vi.fn().mockReturnValue(false),
-			addStreamMessage: vi.fn(),
-			updatePromptVersions: vi.fn(),
+			start: mock().mockResolvedValue({ sessionId: "gemini-session-123" }),
+			startStreaming: mock().mockResolvedValue({
+				sessionId: "gemini-session-123",
+			}),
+			stop: mock(),
+			isStreaming: mock().mockReturnValue(false),
+			addStreamMessage: mock(),
+			updatePromptVersions: mock(),
 		};
-		vi.mocked(GeminiRunner).mockImplementation((_config: any) => {
+		(GeminiRunner as any).mockImplementation((_config: any) => {
 			return mockGeminiRunner;
 		});
 
 		mockOpenCodeRunner = {
 			supportsStreamingInput: true,
-			start: vi.fn().mockResolvedValue({ sessionId: "opencode-session-123" }),
-			startStreaming: vi
-				.fn()
-				.mockResolvedValue({ sessionId: "opencode-session-123" }),
-			stop: vi.fn(),
-			isRunning: vi.fn().mockReturnValue(false),
-			addStreamMessage: vi.fn(),
-			updatePromptVersions: vi.fn(),
+			start: mock().mockResolvedValue({ sessionId: "opencode-session-123" }),
+			startStreaming: mock().mockResolvedValue({
+				sessionId: "opencode-session-123",
+			}),
+			stop: mock(),
+			isRunning: mock().mockReturnValue(false),
+			addStreamMessage: mock(),
+			updatePromptVersions: mock(),
 		};
-		vi.mocked(OpenCodeRunner).mockImplementation((config: any) => {
+		(OpenCodeRunner as any).mockImplementation((config: any) => {
 			capturedRunnerConfig = config;
 			return mockOpenCodeRunner;
 		});
 
 		// Mock AgentSessionManager
 		mockAgentSessionManager = {
-			createLinearAgentSession: vi.fn(),
-			getSession: vi.fn().mockReturnValue({
+			createLinearAgentSession: mock(),
+			getSession: mock().mockReturnValue({
 				issueId: "issue-123",
 				workspace: { path: "/test/workspaces/TEST-123" },
 			}),
-			addAgentRunner: vi.fn(),
-			getAllAgentRunners: vi.fn().mockReturnValue([]),
-			serializeState: vi.fn().mockReturnValue({ sessions: {}, entries: {} }),
-			restoreState: vi.fn(),
-			postAnalyzingThought: vi.fn().mockResolvedValue(null),
-			postProcedureSelectionThought: vi.fn().mockResolvedValue(undefined),
-			handleClaudeMessage: vi.fn().mockResolvedValue(undefined),
-			on: vi.fn(),
+			addAgentRunner: mock(),
+			getAllAgentRunners: mock().mockReturnValue([]),
+			serializeState: mock().mockReturnValue({ sessions: {}, entries: {} }),
+			restoreState: mock(),
+			postAnalyzingThought: mock().mockResolvedValue(null),
+			postProcedureSelectionThought: mock().mockResolvedValue(undefined),
+			handleClaudeMessage: mock().mockResolvedValue(undefined),
+			on: mock(),
 		};
-		vi.mocked(AgentSessionManager).mockImplementation(
+		(AgentSessionManager as any).mockImplementation(
 			() => mockAgentSessionManager,
 		);
 
 		// Mock SharedApplicationServer
-		vi.mocked(SharedApplicationServer).mockImplementation(
+		(SharedApplicationServer as any).mockImplementation(
 			() =>
 				({
-					start: vi.fn().mockResolvedValue(undefined),
-					stop: vi.fn().mockResolvedValue(undefined),
-					getFastifyInstance: vi.fn().mockReturnValue({ post: vi.fn() }),
-					getWebhookUrl: vi
-						.fn()
-						.mockReturnValue("http://localhost:3456/webhook"),
-					registerOAuthCallbackHandler: vi.fn(),
+					start: mock().mockResolvedValue(undefined),
+					stop: mock().mockResolvedValue(undefined),
+					getFastifyInstance: mock().mockReturnValue({ post: mock() }),
+					getWebhookUrl: mock().mockReturnValue(
+						"http://localhost:3456/webhook",
+					),
+					registerOAuthCallbackHandler: mock(),
 				}) as any,
 		);
 
 		// Mock LinearEventTransport
-		vi.mocked(LinearEventTransport).mockImplementation(
+		(LinearEventTransport as any).mockImplementation(
 			() =>
 				({
-					register: vi.fn(),
-					on: vi.fn(),
-					removeAllListeners: vi.fn(),
+					register: mock(),
+					on: mock(),
+					removeAllListeners: mock(),
 				}) as any,
 		);
 
 		// Mock type guards
-		vi.mocked(isAgentSessionCreatedWebhook).mockReturnValue(true);
-		vi.mocked(isAgentSessionPromptedWebhook).mockReturnValue(false);
+		(isAgentSessionCreatedWebhook as any).mockReturnValue(true);
+		(isAgentSessionPromptedWebhook as any).mockReturnValue(false);
 
 		// Mock readFile
-		vi.mocked(readFile).mockImplementation(async () => {
+		(readFile as any).mockImplementation(async () => {
 			return `<version-tag value="default-v1.0.0" />
 # Default Template
 
@@ -231,7 +261,7 @@ Issue: {{issue_identifier}}`;
 			sylasHome: "/tmp/test-sylas-home",
 			repositories: [mockRepository],
 			handlers: {
-				createWorkspace: vi.fn().mockResolvedValue({
+				createWorkspace: mock().mockResolvedValue({
 					path: "/test/workspaces/TEST-123",
 					isGitWorktree: false,
 				}),
@@ -242,16 +272,16 @@ Issue: {{issue_identifier}}`;
 
 		// Inject mock issue tracker
 		const mockIssueTracker = {
-			fetchIssue: vi.fn().mockImplementation(async (issueId: string) => {
+			fetchIssue: mock().mockImplementation(async (issueId: string) => {
 				return mockLinearClient.issue(issueId);
 			}),
-			getIssueLabels: vi.fn(),
+			getIssueLabels: mock(),
 		};
 		(edgeWorker as any).issueTrackers.set(mockRepository.id, mockIssueTracker);
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	/**

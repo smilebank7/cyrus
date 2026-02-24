@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { CodexRunner } from "../src/CodexRunner.js";
 
 describe("CodexRunner MCP config mapping", () => {

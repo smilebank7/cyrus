@@ -7,7 +7,6 @@
  * This ensures comprehensive test coverage and catches regressions in prompt structure.
  */
 
-import { describe, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - Routing Context", () => {

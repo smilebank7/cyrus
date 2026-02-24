@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import type { SDKSystemMessage } from "sylas-claude-runner";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager";
 import type { IActivitySink } from "../src/sinks/IActivitySink";
 
@@ -13,11 +13,11 @@ describe("AgentSessionManager - Model Notification", () => {
 	beforeEach(() => {
 		mockActivitySink = {
 			id: "test-workspace",
-			postActivity: vi.fn().mockResolvedValue({ activityId: "activity-123" }),
-			createAgentSession: vi.fn().mockResolvedValue("session-123"),
+			postActivity: mock().mockResolvedValue({ activityId: "activity-123" }),
+			createAgentSession: mock().mockResolvedValue("session-123"),
 		};
 
-		postActivitySpy = vi.spyOn(mockActivitySink, "postActivity");
+		postActivitySpy = spyOn(mockActivitySink, "postActivity");
 
 		manager = new AgentSessionManager(mockActivitySink);
 
@@ -119,9 +119,9 @@ describe("AgentSessionManager - Model Notification", () => {
 		postActivitySpy.mockRejectedValueOnce(new Error("Failed to post"));
 
 		// Spy on console.error
-		const consoleErrorSpy = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+			() => {},
+		);
 
 		// Create a system init message with model information
 		const systemMessage: SDKSystemMessage = {

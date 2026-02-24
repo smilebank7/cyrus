@@ -2,23 +2,19 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
-import { afterEach, describe, expect, it, vi } from "vitest";
 
-const spawnSyncMock = vi.hoisted(() => vi.fn());
-const spawnMock = vi.hoisted(() => vi.fn());
+const spawnSyncMock = mock();
+const spawnMock = mock();
 
-vi.mock("node:child_process", async () => {
-	const actual =
-		await vi.importActual<typeof import("node:child_process")>(
-			"node:child_process",
-		);
+mock.module("node:child_process", () => {
 	return {
-		...actual,
+		...require("node:child_process"),
 		spawn: spawnMock,
 		spawnSync: spawnSyncMock,
 	};
 });
 
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { CursorRunner } from "../src/CursorRunner.js";
 
 const tempDirs: string[] = [];

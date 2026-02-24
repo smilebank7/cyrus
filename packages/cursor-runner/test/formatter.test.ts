@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { CursorMessageFormatter } from "../src/formatter.js";
 
 describe("CursorMessageFormatter", () => {

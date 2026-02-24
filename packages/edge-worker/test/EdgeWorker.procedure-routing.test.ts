@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { ProcedureAnalyzer } from "../src/procedures/ProcedureAnalyzer";
 import { PROCEDURES, SUBROUTINES } from "../src/procedures/registry";
 
@@ -6,7 +6,7 @@ describe("EdgeWorker - Procedure Routing", () => {
 	let procedureAnalyzer: ProcedureAnalyzer;
 
 	beforeEach(async () => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Create a standalone ProcedureAnalyzer for testing
 		procedureAnalyzer = new ProcedureAnalyzer({

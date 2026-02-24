@@ -18,8 +18,8 @@
 		"build": "tsc",
 		"dev": "tsc --watch",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest",
-		"test:run": "vitest run --passWithNoTests"
+		"test": "bun test",
+		"test:run": "bun test"
 	},
 	"dependencies": {
 		"sylas-core": "workspace:*",
@@ -28,8 +28,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20.12.7",
-		"typescript": "^5.4.5",
-		"vitest": "^3.1.4"
+		"typescript": "^5.4.5"
 	},
 	"keywords": [
 		"config",

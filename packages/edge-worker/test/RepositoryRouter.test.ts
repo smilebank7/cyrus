@@ -1,9 +1,9 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { AgentActivitySignal } from "@linear/sdk";
 import type {
 	LinearAgentSessionCreatedWebhook,
 	RepositoryConfig,
 } from "sylas-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	RepositoryRouter,
 	type RepositoryRouterDeps,
@@ -136,8 +136,8 @@ class RoutingTestEnvironment {
 
 	constructor() {
 		this.mockLinearClient = {
-			createAgentActivity: vi.fn().mockResolvedValue({}),
-			fetchIssue: vi.fn().mockImplementation(async (issueId: string) => ({
+			createAgentActivity: mock().mockResolvedValue({}),
+			fetchIssue: mock().mockImplementation(async (issueId: string) => ({
 				id: issueId,
 				identifier: "TEST-1",
 				project: this.issueProjects.has(issueId)
@@ -147,20 +147,20 @@ class RoutingTestEnvironment {
 		};
 
 		this.mockDeps = {
-			fetchIssueLabels: vi.fn().mockImplementation(async (issueId: string) => {
+			fetchIssueLabels: mock().mockImplementation(async (issueId: string) => {
 				return this.issueLabels.get(issueId) || [];
 			}),
-			fetchIssueDescription: vi
-				.fn()
-				.mockImplementation(async (issueId: string) => {
+			fetchIssueDescription: mock().mockImplementation(
+				async (issueId: string) => {
 					return this.issueDescriptions.get(issueId);
-				}),
-			hasActiveSession: vi
-				.fn()
-				.mockImplementation((issueId: string, repoId: string) => {
+				},
+			),
+			hasActiveSession: mock().mockImplementation(
+				(issueId: string, repoId: string) => {
 					return this.activeSessions.get(issueId)?.has(repoId) || false;
-				}),
-			getIssueTracker: vi.fn().mockReturnValue(this.mockLinearClient),
+				},
+			),
+			getIssueTracker: mock().mockReturnValue(this.mockLinearClient),
 		};
 
 		this.router = new RepositoryRouter(this.mockDeps);
@@ -205,9 +205,9 @@ class RoutingTestEnvironment {
 	 * Simulate label fetching failure
 	 */
 	labelFetchingFails(): this {
-		this.mockDeps.fetchIssueLabels = vi
-			.fn()
-			.mockRejectedValue(new Error("Failed to fetch labels"));
+		this.mockDeps.fetchIssueLabels = mock().mockRejectedValue(
+			new Error("Failed to fetch labels"),
+		);
 		return this;
 	}
 
@@ -215,9 +215,9 @@ class RoutingTestEnvironment {
 	 * Simulate description fetching failure
 	 */
 	descriptionFetchingFails(): this {
-		this.mockDeps.fetchIssueDescription = vi
-			.fn()
-			.mockRejectedValue(new Error("Failed to fetch description"));
+		this.mockDeps.fetchIssueDescription = mock().mockRejectedValue(
+			new Error("Failed to fetch description"),
+		);
 		return this;
 	}
 
@@ -1376,8 +1376,7 @@ describe("RepositoryRouter", () => {
 				const repo = env.repository("repo-1", "Repo").build();
 				const webhook = env.webhook().build();
 
-				env.mockLinearClient.createAgentActivity = vi
-					.fn()
+				env.mockLinearClient.createAgentActivity = mock()
 					.mockRejectedValueOnce(new Error("API error"))
 					.mockResolvedValueOnce({}); // Error activity succeeds
 
@@ -1408,9 +1407,9 @@ describe("RepositoryRouter", () => {
 				const repo = env.repository("repo-1", "Repo").build();
 				const webhook = env.webhook().withSession("session-123").build();
 
-				env.mockLinearClient.createAgentActivity = vi
-					.fn()
-					.mockRejectedValue(new Error("API error"));
+				env.mockLinearClient.createAgentActivity = mock().mockRejectedValue(
+					new Error("API error"),
+				);
 
 				// When: Eliciting user selection (should not throw)
 				await env.router.elicitUserRepositorySelection(webhook, [repo]);

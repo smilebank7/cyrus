@@ -1,29 +1,57 @@
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { LinearClient } from "@linear/sdk";
 import { ClaudeRunner } from "sylas-claude-runner";
 import { LinearEventTransport } from "sylas-linear-event-transport";
 import { createSylasToolsServer } from "sylas-mcp-tools";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { SharedApplicationServer } from "../src/SharedApplicationServer.js";
 import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock all dependencies
-vi.mock("fs/promises");
-vi.mock("sylas-claude-runner");
-vi.mock("sylas-mcp-tools");
-vi.mock("sylas-codex-runner");
-vi.mock("sylas-linear-event-transport");
-vi.mock("@linear/sdk");
-vi.mock("../src/SharedApplicationServer.js");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = (await importOriginal()) as any;
+mock.module("fs/promises", () => ({
+	...require("node:fs/promises"),
+}));
+mock.module("sylas-claude-runner", () => ({
+	...require("sylas-claude-runner"),
+	ClaudeRunner: mock(),
+}));
+mock.module("sylas-mcp-tools", () => ({
+	...require("sylas-mcp-tools"),
+	createSylasToolsServer: mock(),
+}));
+mock.module("sylas-codex-runner", () => ({}));
+mock.module("sylas-linear-event-transport", () => ({
+	...require("sylas-linear-event-transport"),
+	LinearEventTransport: mock(),
+}));
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	...require("../src/SharedApplicationServer.js"),
+	SharedApplicationServer: mock(),
+}));
+mock.module("../src/AgentSessionManager.js", () => ({
+	...require("../src/AgentSessionManager.js"),
+	AgentSessionManager: mock(),
+}));
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core") as any;
 	return {
 		...actual,
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
@@ -52,16 +80,16 @@ describe("EdgeWorker - Feedback Delivery", () => {
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
+		mock.restore();
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
 
 		// Setup callbacks to be captured
-		mockOnFeedbackDelivery = vi.fn();
-		mockOnSessionCreated = vi.fn();
+		mockOnFeedbackDelivery = mock();
+		mockOnSessionCreated = mock();
 
 		// Mock createSylasToolsServer to return a proper structure
-		vi.mocked(createSylasToolsServer).mockImplementation((_token, options) => {
+		(createSylasToolsServer as any).mockImplementation((_token, options) => {
 			// Capture the callbacks
 			if (options?.onFeedbackDelivery) {
 				mockOnFeedbackDelivery = options.onFeedbackDelivery;
@@ -79,39 +107,39 @@ describe("EdgeWorker - Feedback Delivery", () => {
 		// Mock ClaudeRunner
 		mockClaudeRunner = {
 			supportsStreamingInput: true,
-			startStreaming: vi
-				.fn()
-				.mockResolvedValue({ sessionId: "claude-session-123" }),
-			stop: vi.fn(),
-			isStreaming: vi.fn().mockReturnValue(false),
+			startStreaming: mock().mockResolvedValue({
+				sessionId: "claude-session-123",
+			}),
+			stop: mock(),
+			isStreaming: mock().mockReturnValue(false),
 		};
-		vi.mocked(ClaudeRunner).mockImplementation(() => mockClaudeRunner);
+		(ClaudeRunner as any).mockImplementation(() => mockClaudeRunner);
 
 		// Mock child session manager
 		mockChildAgentSessionManager = {
-			hasAgentRunner: vi.fn().mockReturnValue(true),
-			getSession: vi.fn().mockReturnValue({
+			hasAgentRunner: mock().mockReturnValue(true),
+			getSession: mock().mockReturnValue({
 				issueId: "CHILD-456",
 				claudeSessionId: "child-claude-session-456",
 				workspace: { path: "/test/workspaces/CHILD-456" },
 				claudeRunner: mockClaudeRunner,
 			}),
-			getAgentRunner: vi.fn().mockReturnValue(mockClaudeRunner),
-			postAnalyzingThought: vi.fn().mockResolvedValue(undefined),
-			postProcedureSelectionThought: vi.fn().mockResolvedValue(undefined),
-			on: vi.fn(), // EventEmitter method
+			getAgentRunner: mock().mockReturnValue(mockClaudeRunner),
+			postAnalyzingThought: mock().mockResolvedValue(undefined),
+			postProcedureSelectionThought: mock().mockResolvedValue(undefined),
+			on: mock(), // EventEmitter method
 		};
 
 		// Mock parent session manager (for different repository)
 		mockAgentSessionManager = {
-			hasAgentRunner: vi.fn().mockReturnValue(false),
-			getSession: vi.fn().mockReturnValue(null),
-			handleClaudeMessage: vi.fn().mockResolvedValue(undefined),
-			on: vi.fn(),
+			hasAgentRunner: mock().mockReturnValue(false),
+			getSession: mock().mockReturnValue(null),
+			handleClaudeMessage: mock().mockResolvedValue(undefined),
+			on: mock(),
 		};
 
 		// Mock AgentSessionManager constructor
-		vi.mocked(AgentSessionManager).mockImplementation(
+		(AgentSessionManager as any).mockImplementation(
 			(_linearClient, ..._args) => {
 				// Return different managers based on some condition
 				// In real usage, these would be created per repository
@@ -120,33 +148,33 @@ describe("EdgeWorker - Feedback Delivery", () => {
 		);
 
 		// Mock other dependencies
-		vi.mocked(SharedApplicationServer).mockImplementation(
+		(SharedApplicationServer as any).mockImplementation(
 			() =>
 				({
-					start: vi.fn().mockResolvedValue(undefined),
-					stop: vi.fn().mockResolvedValue(undefined),
-					getFastifyInstance: vi.fn().mockReturnValue({ post: vi.fn() }),
-					getWebhookUrl: vi
-						.fn()
-						.mockReturnValue("http://localhost:3456/webhook"),
-					registerOAuthCallbackHandler: vi.fn(),
+					start: mock().mockResolvedValue(undefined),
+					stop: mock().mockResolvedValue(undefined),
+					getFastifyInstance: mock().mockReturnValue({ post: mock() }),
+					getWebhookUrl: mock().mockReturnValue(
+						"http://localhost:3456/webhook",
+					),
+					registerOAuthCallbackHandler: mock(),
 				}) as any,
 		);
 
-		vi.mocked(LinearEventTransport).mockImplementation(
+		(LinearEventTransport as any).mockImplementation(
 			() =>
 				({
-					register: vi.fn(),
-					on: vi.fn(),
-					removeAllListeners: vi.fn(),
+					register: mock(),
+					on: mock(),
+					removeAllListeners: mock(),
 				}) as any,
 		);
 
-		vi.mocked(LinearClient).mockImplementation(
+		(LinearClient as any).mockImplementation(
 			() =>
 				({
 					users: {
-						me: vi.fn().mockResolvedValue({
+						me: mock().mockResolvedValue({
 							id: "user-123",
 							name: "Test User",
 						}),
@@ -159,7 +187,7 @@ describe("EdgeWorker - Feedback Delivery", () => {
 			sylasHome: "/tmp/test-sylas-home",
 			repositories: [mockRepository],
 			handlers: {
-				createWorkspace: vi.fn().mockResolvedValue({
+				createWorkspace: mock().mockResolvedValue({
 					path: "/test/workspaces/CHILD-456",
 					isGitWorktree: false,
 				}),
@@ -174,7 +202,7 @@ describe("EdgeWorker - Feedback Delivery", () => {
 		if (!fullDevelopmentProcedure) {
 			throw new Error("full-development procedure not found");
 		}
-		vi.spyOn(
+		spyOn(
 			(edgeWorker as any).procedureAnalyzer,
 			"determineRoutine",
 		).mockResolvedValue({
@@ -184,9 +212,10 @@ describe("EdgeWorker - Feedback Delivery", () => {
 		});
 
 		// Spy on resumeAgentSession method
-		resumeAgentSessionSpy = vi
-			.spyOn(edgeWorker as any, "resumeAgentSession")
-			.mockResolvedValue(undefined);
+		resumeAgentSessionSpy = spyOn(
+			edgeWorker as any,
+			"resumeAgentSession",
+		).mockResolvedValue(undefined);
 
 		// Setup parent-child mapping
 		(edgeWorker as any).childToParentAgentSession.set(
@@ -203,7 +232,7 @@ describe("EdgeWorker - Feedback Delivery", () => {
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("Parent to Child Feedback Flow", () => {
@@ -404,8 +433,8 @@ describe("EdgeWorker - Feedback Delivery", () => {
 			};
 
 			const mockRepo2Manager = {
-				hasAgentRunner: vi.fn().mockReturnValue(false),
-				getSession: vi.fn().mockReturnValue(null),
+				hasAgentRunner: mock().mockReturnValue(false),
+				getSession: mock().mockReturnValue(null),
 			};
 
 			// First repository doesn't have the session

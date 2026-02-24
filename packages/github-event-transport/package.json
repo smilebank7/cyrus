@@ -12,8 +12,8 @@
 		"build": "tsc",
 		"dev": "tsc --watch",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest",
-		"test:run": "vitest run"
+		"test": "bun test",
+		"test:run": "bun test"
 	},
 	"dependencies": {
 		"sylas-core": "workspace:*",
@@ -21,8 +21,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
-		"typescript": "^5.3.3",
-		"vitest": "^3.1.4"
+		"typescript": "^5.3.3"
 	},
 	"publishConfig": {
 		"access": "public"

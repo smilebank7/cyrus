@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { CursorRunner } from "../src/CursorRunner.js";
 
 function createRunner(): CursorRunner {
