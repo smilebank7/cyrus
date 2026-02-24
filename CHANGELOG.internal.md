@@ -5,6 +5,17 @@ This changelog documents internal development changes, refactors, tooling update
 ## [Unreleased]
 
 
+### Bun Migration (LJH-106)
+ Migrated package manager from pnpm to Bun across the entire monorepo. Removed `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and `packageManager` field; added `workspaces` and `overrides` to root `package.json`; generated `bun.lock`. ([LJH-106](https://linear.app/leejhin/issue/LJH-106/), [#4](https://github.com/smilebank7/sylas/pull/4))
+ Migrated test runner from vitest to bun:test across all 83 test files in 16 packages. Converted `vi.fn()` → `mock()`, `vi.spyOn()` → `spyOn()`, `vi.mock()` → `mock.module()`, timer APIs, and all vitest-specific patterns. Deleted all 10 `vitest.config.ts` files; added `packages/edge-worker/bunfig.toml` with test preload.
+ Removed vitest devDependencies (`vitest`, `@vitest/coverage-v8`) from all 16 package.json files.
+ Rewrote `.github/workflows/ci.yml` to use `oven-sh/setup-bun@v2` with per-file test execution to work around bun 1.3.x `mock.module()` cross-file contamination. Added concurrency group for branch-level dedup.
+ Added `.github/workflows/lint-workflows.yml` for actionlint CI workflow YAML validation.
+ Rewrote `.github/actions/install-dependencies/action.yml` for bun.
+ Updated `deploy/Dockerfile` to `FROM oven/bun:1-debian`, removed pnpm/corepack setup.
+ Updated `.husky/pre-commit` to use `bun run typecheck`.
+ Updated all package scripts from `pnpm` → `bun run` and `vitest` → `bun test`.
+
 ### v2 Migration Planning
  Established v2 roadmap: 6 milestones (v2.0–v2.5) + v2.6 (code review) registered in Linear project `sylas.leejh.in`
  Archived legacy Phase 1–5 milestones, renamed Phase 4 → v2.6

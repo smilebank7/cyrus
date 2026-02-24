@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-
 ### Changed
+ Migrated from pnpm to Bun as the package manager and from vitest to bun:test as the test runner. All CI, Docker, and dev workflows now use Bun. ([LJH-106](https://linear.app/leejhin/issue/LJH-106/), [#4](https://github.com/smilebank7/sylas/pull/4))
  **v2 Documentation & Branding** — README.md completely rewritten to reflect Sylas as a Cyrus fork with oh-my series multi-agent harnesses (OMO/OMC/OMX). Added architecture diagram, runner selection guide, feature overview, and v2 roadmap. AGENTS.md updated with three-harness architecture, deprecated Gemini/Cursor sections, and current package structure.
 
 ### Added
