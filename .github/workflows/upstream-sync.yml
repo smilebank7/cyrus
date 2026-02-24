@@ -1,0 +1,142 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday 09:00 UTC (18:00 KST)
+  workflow_dispatch:
+
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+jobs:
+  sync-upstream-prs:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+
+    env:
+      UPSTREAM_REPO: ceedaragents/cyrus
+      LINEAR_TEAM_ID: 0afc336f-7a31-4e6c-a75f-bd0d689aeda5
+      LINEAR_PROJECT_ID: cda75032-6b56-4adf-956d-e65b4b1283c7
+
+    steps:
+      - name: Fetch upstream merged PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr list --repo "$UPSTREAM_REPO" \
+            --state merged \
+            --json number,title,body,mergedAt,url,additions,deletions \
+            --limit 200 > /tmp/upstream-prs.json
+
+          echo "Found $(jq length /tmp/upstream-prs.json) recently merged PRs"
+
+      - name: Sync new PRs to GitHub Issues + Linear
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        run: |
+          CREATED=0
+          SKIPPED=0
+          FAILED=0
+
+          while IFS= read -r pr; do
+            PR_NUM=$(echo "$pr" | jq -r '.number')
+            PR_TITLE=$(echo "$pr" | jq -r '.title')
+            PR_URL=$(echo "$pr" | jq -r '.url')
+            PR_BODY=$(echo "$pr" | jq -r '(.body // "No description provided.") | .[:2000]')
+            ADDITIONS=$(echo "$pr" | jq -r '.additions')
+            DELETIONS=$(echo "$pr" | jq -r '.deletions')
+            MERGED_AT=$(echo "$pr" | jq -r '.mergedAt')
+
+            # --- Deduplication check ---
+            # Fail loudly if GitHub API is unreachable (prevents false-negative dedup)
+            if ! EXISTING=$(gh issue list \
+              --repo "${{ github.repository }}" \
+              --state all \
+              --label "upstream-sync" \
+              --search "upstream-sync:cyrus#${PR_NUM}" \
+              --json number --jq length); then
+              echo "❌ GitHub API error during dedup check for cyrus#${PR_NUM} — aborting"
+              exit 1
+            fi
+
+            if [ "$EXISTING" != "0" ]; then
+              echo "⏭️  Skip cyrus#${PR_NUM} — already tracked"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            echo "📝 Creating: cyrus#${PR_NUM} — ${PR_TITLE}"
+
+            # --- GitHub Issue (dedup tracker) ---
+            cat > /tmp/gh-issue-body.md <<GHEOF
+<!-- upstream-sync:cyrus#${PR_NUM} -->
+
+## Upstream PR
+
+- **Source**: ${PR_URL}
+- **Merged**: ${MERGED_AT}
+- **Changes**: +${ADDITIONS} / -${DELETIONS}
+
+## Original Description
+
+${PR_BODY}
+
+---
+_Auto-created by [upstream-sync workflow](https://github.com/${{ github.repository }}/actions/workflows/upstream-sync.yml). Add \`approved-for-sync\` label to trigger agent cherry-pick._
+GHEOF
+
+            # --- Linear Issue first (so dedup marker isn't set if this fails) ---
+            jq -n \
+              --arg title "⬆️ Upstream: ${PR_TITLE}" \
+              --arg desc "## Upstream Cherry-pick Candidate\n\n- **Source**: [cyrus#${PR_NUM}](${PR_URL})\n- **Merged**: ${MERGED_AT}\n- **Changes**: +${ADDITIONS} / -${DELETIONS}\n\n## Original Description\n\n${PR_BODY}\n\n## Cherry-pick Guide\n\n1. \`git fetch https://github.com/ceedaragents/cyrus.git main\`\n2. Identify the merge commit for PR #${PR_NUM}\n3. \`git cherry-pick <sha>\`\n4. Resolve any cyrus→sylas rename conflicts\n5. Create PR for review" \
+              --arg teamId "$LINEAR_TEAM_ID" \
+              --arg projectId "$LINEAR_PROJECT_ID" \
+              '{
+                "query": "mutation($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { identifier url } } }",
+                "variables": {
+                  "input": {
+                    "teamId": $teamId,
+                    "projectId": $projectId,
+                    "title": $title,
+                    "description": $desc,
+                    "priority": 4
+                  }
+                }
+              }' > /tmp/linear-payload.json
+            LINEAR_RESULT=$(curl -s -X POST https://api.linear.app/graphql \
+              -H "Authorization: ${LINEAR_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d @/tmp/linear-payload.json)
+            LINEAR_SUCCESS=$(echo "$LINEAR_RESULT" | jq -r '.data.issueCreate.success // false')
+            if [ "$LINEAR_SUCCESS" != "true" ]; then
+              echo "⚠️  Linear issue creation failed for cyrus#${PR_NUM} — skipping GitHub issue to allow retry"
+              echo "   Response: $(echo "$LINEAR_RESULT" | jq -c '.')"
+              FAILED=$((FAILED + 1))
+              continue
+            fi
+
+            LINEAR_ID=$(echo "$LINEAR_RESULT" | jq -r '.data.issueCreate.issue.identifier')
+            LINEAR_URL=$(echo "$LINEAR_RESULT" | jq -r '.data.issueCreate.issue.url')
+            echo "   → Linear: ${LINEAR_ID} ${LINEAR_URL}"
+            # --- GitHub Issue (dedup tracker) — must succeed or the whole run fails ---
+            # If this fails after Linear succeeds, abort immediately to prevent
+            # duplicate Linear issues on the next run (no dedup marker = retry = dupe).
+            if ! gh issue create \
+              --repo "${{ github.repository }}" \
+              --title "⬆️ Upstream: ${PR_TITLE}" \
+              --label "upstream-sync" \
+              --body-file /tmp/gh-issue-body.md; then
+              echo "❌ GitHub issue creation failed for cyrus#${PR_NUM} after Linear ${LINEAR_ID} was created"
+              echo "   ⚠️  Manual cleanup needed: Linear issue ${LINEAR_ID} may be duplicated on next run"
+              exit 1
+            fi
+            CREATED=$((CREATED + 1))
+          done < <(jq -c '.[]' /tmp/upstream-prs.json)
+
+          echo ""
+          echo "✅ Upstream sync complete — Created: $CREATED | Skipped: $SKIPPED | Failed: $FAILED"
