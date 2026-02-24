@@ -1,19 +1,29 @@
 # CLAUDE.md
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Sylas is a self-hosted AI coding agent that integrates Linear's issue tracking with OpenCode (+ oh-my-opencode multi-agent orchestration) to automate software development tasks. Fork of Cyrus, reimagined for OpenCode runner.
-
+Sylas is a self-hosted AI coding agent that integrates Linear's issue tracking with Claude Code (+ oh-my-Claude multi-agent orchestration) to automate software development tasks. Fork of [Cyrus](https://github.com/ceedaragents/cyrus), reimagined with oh-my series multi-agent harnesses.
 **Key capabilities:**
 - Monitors Linear issues assigned to it
 - Creates isolated Git worktrees for each issue
-- Runs OpenCode sessions with oh-my-opencode plugin (Sisyphus/Opus multi-agent)
+- Runs AI sessions with oh-my series plugins (Sisyphus/Opus multi-agent orchestration)
 - Streams real-time activity updates back to Linear
 - Session continuity via `--session` flag
 - Full-delegation mode (single session, no subroutine splitting)
+### Three Harnesses (oh-my series)
 
+Sylas supports three AI runner harnesses, each paired with an oh-my series multi-agent plugin:
+
+| Harness | Runner | Plugin | Package |
+|---------|--------|--------|---------|
+| **OMO** | OpenCode | oh-my-opencode | `packages/opencode-runner/` |
+| **OMC** | Claude Code | oh-my-claude | `packages/claude-runner/` |
+| **OMX** | Codex CLI | — | `packages/codex-runner/` |
+
+**OMO** (OhMyOpencode) is the default and most powerful harness. Runner selection is done via Linear labels (`omo`, `omc`, `omx`) or issue description tags (`[agent=opencode]`, `[agent=claude]`, `[agent=codex]`).
+
+> **v2 Note**: Packages will be renamed to `omo-runner`, `omc-runner`, `omx-runner`. Gemini, Cursor, and SimpleAgent runners are deprecated and will be removed in v2.1.
 
 ## How Sylas Works
 
@@ -25,15 +35,15 @@ When a Linear issue is assigned to Sylas, the following sequence occurs:
 
 3. **AI Classification**: The issue content is analyzed to determine its type (`code`, `question`, `research`, etc.) and the appropriate procedure is selected (e.g., `full-development` for coding tasks).
 
-4. **Subroutine Execution**: For development tasks, Claude executes a sequence of subroutines:
+4. **Subroutine Execution**: For development tasks, the AI runner executes a sequence of subroutines:
    - **coding-activity**: Implements the requested feature/fix
    - **verifications**: Runs tests, type checks, and linting
    - **git-gh**: Commits changes and creates pull requests
    - **concise-summary**: Generates a final summary for Linear
 
-5. **Mid-Implementation Prompting**: Users can add comments to the Linear issue while Claude is working. These comments are streamed into the active session, allowing real-time guidance (e.g., "Also add a modulo method while you're at it").
+5. **Mid-Implementation Prompting**: Users can add comments to the Linear issue while the agent is working. These comments are streamed into the active session, allowing real-time guidance (e.g., "Also add a modulo method while you're at it").
 
-6. **Activity Tracking**: Every thought and action is posted back to Linear as activities, providing full visibility into what Claude is doing.
+6. **Activity Tracking**: Every thought and action is posted back to Linear as activities, providing full visibility into what the agent is doing.
 
 ### Example Interaction
 
@@ -117,7 +127,7 @@ Design rule:
 
 ## Checklist For New Agent CLI Harnesses
 
-When implementing a new runner/harness (for example Codex, Gemini, OpenCode, or other CLIs), use this checklist before shipping.
+When implementing a new runner/harness (for example OMO, OMC, OMX, or other CLIs), use this checklist before shipping.
 
 ### 1) Session Lifecycle And Turn Limits
 
@@ -185,7 +195,7 @@ When implementing a new runner/harness (for example Codex, Gemini, OpenCode, or 
 
 ### 11) Config Schema And Backward Compatibility
 
-- Use provider-specific defaults (`claudeDefaultModel`, `geminiDefaultModel`, `codexDefaultModel`).
+ Use provider-specific defaults (`claudeDefaultModel`, `openCodeDefaultModel`, `codexDefaultModel`).
 - Add config migration logic for renamed or legacy fields.
 - Keep docs/comments provider-specific and explicit.
 
@@ -204,8 +214,9 @@ When implementing a new runner/harness (for example Codex, Gemini, OpenCode, or 
 Codex emitted tool activity at `item.started`/`item.completed` events, but those were initially not mapped to `tool_use`/`tool_result`. The result was missing action/file-edit visibility in Linear. For any new harness, treat tool lifecycle mapping as a first-class acceptance criterion, not a formatter-only concern.
 
 ### Cursor Integration Lesson Learned
+> **Deprecated**: Cursor runner is being removed in v2.1. This section is kept for historical reference.
 
-Cursor CLI permissions are enforced from config (`~/.cursor/cli-config.json` or `<project>/.cursor/cli.json`) instead of dynamic per-request tool allowlists. For Cursor-like providers, do not rely on dynamic SDK tool constraints alone—add a translation layer (for example `mcp__server__tool` -> `Mcp(server:tool)`, `Bash(...)` -> `Shell(...)`) and sync project permissions before each run and between subroutines. Also pre-enable MCP servers via `agent mcp list` + `agent mcp enable <server>` using both project-listed and runner-configured server names so headless sessions can invoke MCP tools immediately. In Sylas Cursor runs, treat `.cursor/mcp.json` as the project MCP source and follow Cursor's configuration-location and file-syntax docs (these differ from Claude's MCP interpretation): https://cursor.com/docs/context/mcp#configuration-locations. Use workspace-scoped wildcard file permissions (`Read(./**)`, `Write(./**)`) rather than unscoped `Read(**)` / `Write(**)` in translation defaults. Reference: https://cursor.com/docs/cli/reference/permissions
+Cursor CLI permissions are enforced from config (`~/.cursor/cli-config.json` or `<project>/.cursor/cli.json`) instead of dynamic per-request tool allowlists. For Cursor-like providers, do not rely on dynamic SDK tool constraints alone—add a translation layer (for example `mcp__server__tool` -> `Mcp(server:tool)`, `Bash(...)` -> `Shell(...)`) and sync project permissions before each run and between subroutines.
 
 ## Navigating GitHub Repositories
 
@@ -230,24 +241,38 @@ This proxy service provides unauthenticated access to GitHub content, making it 
 Simply replace `github.com` with `uuithub.com` in any GitHub URL.
 
 ## Architecture Overview
-
 The codebase follows a pnpm monorepo structure:
 
 ```
 sylas/
 ├── apps/
-│   ├── cli/          # Main CLI application
-│   ├── electron/     # Future Electron GUI (in development)
-│   └── proxy/        # Edge proxy server for OAuth/webhooks
-└── packages/
-    ├── core/         # Shared types and session management
-    ├── claude-parser/# Claude stdout parsing with jq
-    ├── claude-runner/# Claude CLI execution wrapper
-    ├── edge-worker/  # Edge worker client implementation
-    └── ndjson-client/# NDJSON streaming client
+│   ├── cli/                     # Main CLI application (sylas-ai on npm)
+│   └── proxy/                   # OAuth proxy server
+│
+├── packages/
+│   ├── edge-worker/             # Core: webhook handling, session management, prompt assembly
+│   ├── opencode-runner/         # OMO — OpenCode + oh-my-opencode harness (default)
+│   ├── claude-runner/           # OMC — Claude Code + oh-my-claude harness
+│   ├── codex-runner/            # OMX — Codex CLI harness
+│   ├── core/                    # Shared types, session management, logging
+│   ├── linear-event-transport/  # Linear webhook receiver
+│   ├── github-event-transport/  # GitHub webhook receiver
+│   ├── mcp-tools/               # Built-in MCP tools (Linear, image gen, etc.)
+│   ├── config-updater/          # Dynamic config reload
+│   └── cloudflare-tunnel-client/# Cloudflare tunnel transport
+│
+│   # Deprecated (removing in v2.1):
+│   ├── gemini-runner/           # [DEPRECATED]
+│   ├── cursor-runner/           # [DEPRECATED]
+│   ├── simple-agent-runner/     # [DEPRECATED]
+│   └── slack-event-transport/   # [DEPRECATED]
+│
+├── deploy/                      # Docker, Dockerfile, environment config
+├── docs/                        # Self-hosting, config, tunnel guides
+└── skills/                      # Shared agent skills (F1 test drives, etc.)
 ```
 
-For a detailed visual representation of how these components interact and map Claude Code sessions to Linear comment threads, see @architecture.md.
+For a detailed visual representation of how these components interact, see the README.
 
 ## Testing Best Practices
 
@@ -389,16 +414,13 @@ The agent automatically moves issues to the "started" state when assigned. Linea
 - **Issue Assignment Behavior**: When an issue is assigned to the agent, it automatically transitions to a state with `type === 'started'` (In Progress)
 
 ## Important Development Notes
-
-1. **Edge-Proxy Architecture**: The project is transitioning to separate OAuth/webhook handling from Claude processing.
-
+1. **Upstream**: Sylas is a fork of [Cyrus](https://github.com/ceedaragents/cyrus). We maintain an upstream sync pipeline to pull in improvements.
 2. **Dependencies**: 
-   - The claude-parser package requires `jq` to be installed on the system
    - Uses pnpm as package manager (v10.11.0)
-   - TypeScript for all new packages
+   - TypeScript for all packages
+   - Vitest for testing
 
 3. **Git Worktrees**: When processing issues, the agent creates separate git worktrees. If a `sylas-setup.sh` script exists in the repository root, it's executed in new worktrees for project-specific initialization.
-
 4. **Testing**: Uses Vitest for all packages. Run tests before committing changes.
 
 ## Development Workflow
@@ -428,12 +450,15 @@ When working on this codebase, follow these practices:
    - Example: "New comments now feed into existing sessions" NOT "Implemented AsyncIterable<SDKUserMessage> for ClaudeRunner"
 
 ## Key Code Paths
-
-- **Linear Integration**: `apps/cli/services/LinearIssueService.mjs`
-- **Claude Execution**: `packages/claude-runner/src/ClaudeRunner.ts`
-- **Session Management**: `packages/core/src/session/`
-- **Edge Worker**: `packages/edge-worker/src/EdgeWorker.ts`
-- **OAuth Flow**: `apps/proxy/src/services/OAuthService.mjs`
+ **Edge Worker (core)**: `packages/edge-worker/src/EdgeWorker.ts`
+ **Runner Selection**: `packages/edge-worker/src/RunnerSelectionService.ts`
+ **OMO Runner**: `packages/opencode-runner/src/OpenCodeRunner.ts`
+ **OMC Runner**: `packages/claude-runner/src/ClaudeRunner.ts`
+ **OMX Runner**: `packages/codex-runner/src/CodexRunner.ts`
+ **Session Management**: `packages/core/src/session/`
+ **Config Schemas**: `packages/core/src/config-schemas.ts`
+ **Linear Integration**: `apps/cli/services/LinearIssueService.mjs`
+ **OAuth Flow**: `apps/proxy/src/services/OAuthService.mjs`
 
 ## Testing MCP Linear Integration
 
@@ -481,18 +506,13 @@ For publishing and release instructions, use the `/release` skill (within Claude
 
 
 ## Gemini CLI for Testing
+> **Deprecated**: Gemini runner is being removed in v2.1. This section is kept for historical reference.
 
-The project uses Google's Gemini CLI for testing the GeminiRunner implementation. Install the specific version:
-
+The project previously used Google's Gemini CLI for testing the GeminiRunner implementation:
 ```bash
 npm install -g @google/gemini-cli@0.17.0
 ```
 
-This ensures consistency when running integration tests that interact with the Gemini API.
-
 ### Gemini Configuration Reference
-
 For detailed information about Gemini CLI configuration options (settings.json structure, model aliases, previewFeatures, etc.), refer to:
 - **Official Documentation**: https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/configuration.md
-
-The GeminiRunner automatically generates a `~/.gemini/settings.json` file with single-turn model aliases and preview features enabled if one doesn't already exist.

@@ -4,6 +4,15 @@ This changelog documents internal development changes, refactors, tooling update
 
 ## [Unreleased]
 
+
+### v2 Migration Planning
+ Established v2 roadmap: 6 milestones (v2.0–v2.5) + v2.6 (code review) registered in Linear project `sylas.leejh.in`
+ Archived legacy Phase 1–5 milestones, renamed Phase 4 → v2.6
+ Created 27 issues across all milestones for runner consolidation (OMO/OMC/OMX), dead code removal (Gemini/Cursor/SimpleAgent/Slack), dashboard MVP, deployment modes, AI account connection, and documentation
+ README.md rewritten: Cyrus fork + oh-my series multi-agent harnesses branding, architecture diagram, runner selection guide, v2 roadmap
+ AGENTS.md updated: three-harness architecture table (OMO/OMC/OMX), deprecated Gemini/Cursor sections, updated Architecture Overview with current packages, updated Key Code Paths with all 3 runners
+ CHANGELOG.md and CHANGELOG.internal.md updated with v2 documentation entries
+
 ### Changed
 - `SlackEventTransport.getSlackBotToken()` now reads `SLACK_BOT_TOKEN` exclusively from `process.env` with no header fallback. The `X-Slack-Bot-Token` request header is no longer used. ([CYPACK-824](https://linear.app/ceedar/issue/CYPACK-824), [#876](https://github.com/smilebank7/sylas/pull/876))
 - Refactored `EdgeWorker.ts` by extracting 5 service modules: `ActivityPoster` (Linear activity posting), `AttachmentService` (attachment download/manifests), `ConfigManager` (config file watching/reload/change detection), `PromptBuilder` (prompt assembly/system prompts/issue context), and `RunnerSelectionService` (runner/model selection/tool configuration). Reduced EdgeWorker from 7,687 to 5,466 lines (29% reduction) while maintaining full test coverage (522 tests). ([CYPACK-822](https://linear.app/ceedar/issue/CYPACK-822), [#874](https://github.com/smilebank7/sylas/pull/874))

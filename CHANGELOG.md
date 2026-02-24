@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+
+### Changed
+ **v2 Documentation & Branding** — README.md completely rewritten to reflect Sylas as a Cyrus fork with oh-my series multi-agent harnesses (OMO/OMC/OMX). Added architecture diagram, runner selection guide, feature overview, and v2 roadmap. AGENTS.md updated with three-harness architecture, deprecated Gemini/Cursor sections, and current package structure.
+
 ### Added
 - GitHub PR comment support: Sylas can now be triggered by `@sylasagent` mentions on GitHub pull request comments, creating sessions and posting replies directly on PRs. ([CYPACK-772](https://linear.app/ceedar/issue/CYPACK-772), [#820](https://github.com/smilebank7/sylas/pull/820))
 - Slack integration: Sylas can now receive `@mention` webhooks from Slack channels and threads, enabling Slack as a new platform for triggering agent sessions. ([CYPACK-807](https://linear.app/ceedar/issue/CYPACK-807), [#861](https://github.com/smilebank7/sylas/pull/861))
