@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it } from "vitest";
 import { CLIIssueTrackerService } from "../src/issue-tracker/adapters/CLIIssueTrackerService";
 
 describe("CLIIssueTrackerService - Label Operations", () => {

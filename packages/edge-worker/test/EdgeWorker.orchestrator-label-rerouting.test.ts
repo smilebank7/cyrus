@@ -1,24 +1,38 @@
 import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
+import {
 	AgentSessionStatus,
 	AgentSessionType,
 	LinearClient,
 } from "@linear/sdk";
 import type { SylasAgentSession } from "sylas-core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock dependencies
-vi.mock("@linear/sdk");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = (await importOriginal()) as any;
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("../src/AgentSessionManager.js", () => ({
+	...require("../src/AgentSessionManager.js"),
+	AgentSessionManager: mock(),
+}));
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core") as any;
 	return {
 		...actual,
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
@@ -45,16 +59,16 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Mock console methods
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "warn").mockImplementation(() => {});
 
 		// Mock LinearClient - default to issue WITHOUT Orchestrator label
 		mockLinearClient = {
-			issue: vi.fn().mockResolvedValue({
+			issue: mock().mockResolvedValue({
 				id: "issue-123",
 				identifier: "TEST-123",
 				title: "Test Issue",
@@ -63,27 +77,27 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [], // No labels by default
 				}),
 			}),
 			// Mock the underlying GraphQL client for token refresh patching
 			client: {
-				request: vi.fn(),
-				setHeader: vi.fn(),
+				request: mock(),
+				setHeader: mock(),
 			},
 		};
-		vi.mocked(LinearClient).mockImplementation(() => mockLinearClient);
+		(LinearClient as any).mockImplementation(() => mockLinearClient);
 
 		// Mock AgentSessionManager
 		mockAgentSessionManager = {
-			postRoutingThought: vi.fn().mockResolvedValue(null),
-			postProcedureSelectionThought: vi.fn().mockResolvedValue(undefined),
-			postAnalyzingThought: vi.fn().mockResolvedValue(undefined),
-			handleClaudeMessage: vi.fn().mockResolvedValue(undefined),
-			on: vi.fn(),
+			postRoutingThought: mock().mockResolvedValue(null),
+			postProcedureSelectionThought: mock().mockResolvedValue(undefined),
+			postAnalyzingThought: mock().mockResolvedValue(undefined),
+			handleClaudeMessage: mock().mockResolvedValue(undefined),
+			on: mock(),
 		};
-		vi.mocked(AgentSessionManager).mockImplementation(
+		(AgentSessionManager as any).mockImplementation(
 			() => mockAgentSessionManager,
 		);
 
@@ -92,7 +106,7 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 			sylasHome: "/tmp/test-sylas-home",
 			repositories: [mockRepository],
 			handlers: {
-				createWorkspace: vi.fn().mockResolvedValue({
+				createWorkspace: mock().mockResolvedValue({
 					path: "/test/workspaces/TEST-123",
 					isGitWorktree: false,
 				}),
@@ -103,7 +117,7 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("rerouteProcedureForSession - Orchestrator label enforcement", () => {
@@ -118,7 +132,7 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "Orchestrator" }], // Has Orchestrator label
 				}),
 			});
@@ -235,7 +249,7 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "Orchestrator" }], // Has Orchestrator label
 				}),
 			});
@@ -300,7 +314,7 @@ describe("EdgeWorker - Orchestrator Label Rerouting", () => {
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "orchestrator" }], // Lowercase variant
 				}),
 			});
@@ -414,7 +428,7 @@ Work completed on subtask TEST-124.
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "orchestrator" }], // lowercase
 				}),
 			});
@@ -470,7 +484,7 @@ Work completed on subtask TEST-124.
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "Orchestrator" }],
 				}),
 			});
@@ -544,7 +558,7 @@ Work completed on subtask TEST-124.
 				sylasHome: "/tmp/test-sylas-home",
 				repositories: [repositoryWithoutOrchestratorConfig],
 				handlers: {
-					createWorkspace: vi.fn().mockResolvedValue({
+					createWorkspace: mock().mockResolvedValue({
 						path: "/test/workspaces/TEST-123",
 						isGitWorktree: false,
 					}),
@@ -565,7 +579,7 @@ Work completed on subtask TEST-124.
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "orchestrator" }], // lowercase orchestrator label
 				}),
 			});
@@ -638,7 +652,7 @@ Work completed on subtask TEST-124.
 				sylasHome: "/tmp/test-sylas-home",
 				repositories: [repositoryWithoutOrchestratorConfig],
 				handlers: {
-					createWorkspace: vi.fn().mockResolvedValue({
+					createWorkspace: mock().mockResolvedValue({
 						path: "/test/workspaces/TEST-123",
 						isGitWorktree: false,
 					}),
@@ -659,7 +673,7 @@ Work completed on subtask TEST-124.
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "Orchestrator" }], // Capitalized Orchestrator label
 				}),
 			});
@@ -732,7 +746,7 @@ Work completed on subtask TEST-124.
 				sylasHome: "/tmp/test-sylas-home",
 				repositories: [repositoryWithoutOrchestratorConfig],
 				handlers: {
-					createWorkspace: vi.fn().mockResolvedValue({
+					createWorkspace: mock().mockResolvedValue({
 						path: "/test/workspaces/TEST-123",
 						isGitWorktree: false,
 					}),
@@ -753,7 +767,7 @@ Work completed on subtask TEST-124.
 				branchName: "test-branch",
 				state: { name: "In Progress", type: "started" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "Bug" }], // Different label, not orchestrator
 				}),
 			});

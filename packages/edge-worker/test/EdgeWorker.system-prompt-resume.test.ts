@@ -1,3 +1,12 @@
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { readFile } from "node:fs/promises";
 import { LinearClient } from "@linear/sdk";
 import { ClaudeRunner } from "sylas-claude-runner";
@@ -10,40 +19,55 @@ import {
 	isAgentSessionPromptedWebhook,
 } from "sylas-core";
 import { LinearEventTransport } from "sylas-linear-event-transport";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { SharedApplicationServer } from "../src/SharedApplicationServer.js";
 import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock fs/promises
-vi.mock("fs/promises", () => ({
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	rename: vi.fn(),
+mock.module("fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock(),
+	writeFile: mock(),
+	mkdir: mock(),
+	rename: mock(),
 }));
 
 // Mock dependencies
-vi.mock("sylas-claude-runner");
-vi.mock("sylas-codex-runner");
-vi.mock("sylas-linear-event-transport");
-vi.mock("@linear/sdk");
-vi.mock("../src/SharedApplicationServer.js");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = (await importOriginal()) as any;
+mock.module("sylas-claude-runner", () => ({
+	...require("sylas-claude-runner"),
+	ClaudeRunner: mock(),
+}));
+mock.module("sylas-codex-runner", () => ({}));
+mock.module("sylas-linear-event-transport", () => ({
+	...require("sylas-linear-event-transport"),
+	LinearEventTransport: mock(),
+}));
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	...require("../src/SharedApplicationServer.js"),
+	SharedApplicationServer: mock(),
+}));
+mock.module("../src/AgentSessionManager.js", () => ({
+	...require("../src/AgentSessionManager.js"),
+	AgentSessionManager: mock(),
+}));
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core") as any;
 	return {
 		...actual,
-		isAgentSessionCreatedWebhook: vi.fn(),
-		isAgentSessionPromptedWebhook: vi.fn(),
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		isAgentSessionCreatedWebhook: mock(),
+		isAgentSessionPromptedWebhook: mock(),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
-vi.mock("file-type");
+mock.module("file-type", () => ({}));
 
 describe("EdgeWorker - System Prompt Resume", () => {
 	let edgeWorker: EdgeWorker;
@@ -71,16 +95,16 @@ describe("EdgeWorker - System Prompt Resume", () => {
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Mock console methods
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "warn").mockImplementation(() => {});
 
 		// Mock LinearClient
 		mockLinearClient = {
-			issue: vi.fn().mockResolvedValue({
+			issue: mock().mockResolvedValue({
 				id: "issue-123",
 				identifier: "TEST-123",
 				title: "Test Issue with Bug",
@@ -89,44 +113,44 @@ describe("EdgeWorker - System Prompt Resume", () => {
 				branchName: "test-branch",
 				state: { name: "Todo" },
 				team: { id: "team-123" },
-				labels: vi.fn().mockResolvedValue({
+				labels: mock().mockResolvedValue({
 					nodes: [{ name: "bug" }], // This should trigger debugger prompt
 				}),
 			}),
-			workflowStates: vi.fn().mockResolvedValue({
+			workflowStates: mock().mockResolvedValue({
 				nodes: [
 					{ id: "state-1", name: "Todo", type: "unstarted", position: 0 },
 					{ id: "state-2", name: "In Progress", type: "started", position: 1 },
 				],
 			}),
-			updateIssue: vi.fn().mockResolvedValue({ success: true }),
-			createAgentActivity: vi.fn().mockResolvedValue({ success: true }),
-			comments: vi.fn().mockResolvedValue({ nodes: [] }),
-			rawRequest: vi.fn(), // Add rawRequest to avoid validation warnings
+			updateIssue: mock().mockResolvedValue({ success: true }),
+			createAgentActivity: mock().mockResolvedValue({ success: true }),
+			comments: mock().mockResolvedValue({ nodes: [] }),
+			rawRequest: mock(), // Add rawRequest to avoid validation warnings
 		};
-		vi.mocked(LinearClient).mockImplementation(() => mockLinearClient);
+		(LinearClient as any).mockImplementation(() => mockLinearClient);
 
 		// Mock ClaudeRunner to capture config
 		mockClaudeRunner = {
 			supportsStreamingInput: true,
-			start: vi.fn().mockResolvedValue({ sessionId: "claude-session-123" }),
-			startStreaming: vi
-				.fn()
-				.mockResolvedValue({ sessionId: "claude-session-123" }),
-			stop: vi.fn(),
-			isStreaming: vi.fn().mockReturnValue(false),
-			addStreamMessage: vi.fn(),
-			updatePromptVersions: vi.fn(),
+			start: mock().mockResolvedValue({ sessionId: "claude-session-123" }),
+			startStreaming: mock().mockResolvedValue({
+				sessionId: "claude-session-123",
+			}),
+			stop: mock(),
+			isStreaming: mock().mockReturnValue(false),
+			addStreamMessage: mock(),
+			updatePromptVersions: mock(),
 		};
-		vi.mocked(ClaudeRunner).mockImplementation((config: any) => {
+		(ClaudeRunner as any).mockImplementation((config: any) => {
 			capturedClaudeRunnerConfig = config;
 			return mockClaudeRunner;
 		});
 
 		// Mock AgentSessionManager
 		mockAgentSessionManager = {
-			createLinearAgentSession: vi.fn(),
-			getSession: vi.fn().mockReturnValue({
+			createLinearAgentSession: mock(),
+			getSession: mock().mockReturnValue({
 				id: "agent-session-123",
 				externalSessionId: "agent-session-123",
 				claudeSessionId: "claude-session-123",
@@ -145,49 +169,49 @@ describe("EdgeWorker - System Prompt Resume", () => {
 				workspace: { path: "/test/workspaces/TEST-123" },
 				claudeRunner: mockClaudeRunner,
 			}),
-			addAgentRunner: vi.fn(),
-			getAllClaudeRunners: vi.fn().mockReturnValue([]),
-			serializeState: vi.fn().mockReturnValue({ sessions: {}, entries: {} }),
-			restoreState: vi.fn(),
-			postAnalyzingThought: vi.fn().mockResolvedValue(null),
-			postProcedureSelectionThought: vi.fn().mockResolvedValue(undefined),
-			handleClaudeMessage: vi.fn().mockResolvedValue(undefined),
-			on: vi.fn(),
+			addAgentRunner: mock(),
+			getAllClaudeRunners: mock().mockReturnValue([]),
+			serializeState: mock().mockReturnValue({ sessions: {}, entries: {} }),
+			restoreState: mock(),
+			postAnalyzingThought: mock().mockResolvedValue(null),
+			postProcedureSelectionThought: mock().mockResolvedValue(undefined),
+			handleClaudeMessage: mock().mockResolvedValue(undefined),
+			on: mock(),
 		};
-		vi.mocked(AgentSessionManager).mockImplementation(
+		(AgentSessionManager as any).mockImplementation(
 			() => mockAgentSessionManager,
 		);
 
 		// Mock SharedApplicationServer
-		vi.mocked(SharedApplicationServer).mockImplementation(
+		(SharedApplicationServer as any).mockImplementation(
 			() =>
 				({
-					start: vi.fn().mockResolvedValue(undefined),
-					stop: vi.fn().mockResolvedValue(undefined),
-					getFastifyInstance: vi.fn().mockReturnValue({ post: vi.fn() }),
-					getWebhookUrl: vi
-						.fn()
-						.mockReturnValue("http://localhost:3456/webhook"),
-					registerOAuthCallbackHandler: vi.fn(),
+					start: mock().mockResolvedValue(undefined),
+					stop: mock().mockResolvedValue(undefined),
+					getFastifyInstance: mock().mockReturnValue({ post: mock() }),
+					getWebhookUrl: mock().mockReturnValue(
+						"http://localhost:3456/webhook",
+					),
+					registerOAuthCallbackHandler: mock(),
 				}) as any,
 		);
 
 		// Mock LinearEventTransport
-		vi.mocked(LinearEventTransport).mockImplementation(
+		(LinearEventTransport as any).mockImplementation(
 			() =>
 				({
-					register: vi.fn(),
-					on: vi.fn(),
-					removeAllListeners: vi.fn(),
+					register: mock(),
+					on: mock(),
+					removeAllListeners: mock(),
 				}) as any,
 		);
 
 		// Mock type guards
-		vi.mocked(isAgentSessionCreatedWebhook).mockReturnValue(false);
-		vi.mocked(isAgentSessionPromptedWebhook).mockReturnValue(false);
+		(isAgentSessionCreatedWebhook as any).mockReturnValue(false);
+		(isAgentSessionPromptedWebhook as any).mockReturnValue(false);
 
 		// Mock readFile to return debugger prompt
-		vi.mocked(readFile).mockImplementation(async (path: any) => {
+		(readFile as any).mockImplementation(async (path: any) => {
 			if (path.includes("debugger.md")) {
 				return `<version-tag value="debugger-v1.0.0" />
 # Debugger System Prompt
@@ -207,7 +231,7 @@ Issue: {{issue_identifier}}`;
 			sylasHome: "/tmp/test-sylas-home",
 			repositories: [mockRepository],
 			handlers: {
-				createWorkspace: vi.fn().mockResolvedValue({
+				createWorkspace: mock().mockResolvedValue({
 					path: "/test/workspaces/TEST-123",
 					isGitWorktree: false,
 				}),
@@ -218,16 +242,16 @@ Issue: {{issue_identifier}}`;
 
 		// Inject mock issue tracker for the test repository
 		const mockIssueTracker = {
-			fetchIssue: vi.fn().mockImplementation(async (issueId: string) => {
+			fetchIssue: mock().mockImplementation(async (issueId: string) => {
 				return mockLinearClient.issue(issueId);
 			}),
-			getIssueLabels: vi.fn().mockResolvedValue([{ name: "bug" }]),
+			getIssueLabels: mock().mockResolvedValue([{ name: "bug" }]),
 		};
 		(edgeWorker as any).issueTrackers.set(mockRepository.id, mockIssueTracker);
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	it("should include system prompt when creating initial ClaudeRunner", async () => {
@@ -246,7 +270,7 @@ Issue: {{issue_identifier}}`;
 			},
 		};
 
-		vi.mocked(isAgentSessionCreatedWebhook).mockReturnValue(true);
+		(isAgentSessionCreatedWebhook as any).mockReturnValue(true);
 
 		// Act - call the private method directly since we're testing internal behavior
 		const handleAgentSessionCreatedWebhook = (
@@ -255,7 +279,7 @@ Issue: {{issue_identifier}}`;
 		await handleAgentSessionCreatedWebhook(createdWebhook, [mockRepository]);
 
 		// Assert
-		expect(vi.mocked(ClaudeRunner)).toHaveBeenCalled();
+		expect(ClaudeRunner as any).toHaveBeenCalled();
 		expect(capturedClaudeRunnerConfig).toBeDefined();
 		expect(capturedClaudeRunnerConfig.appendSystemPrompt).toContain(
 			"You are in debugger mode. Fix bugs systematically.",
@@ -265,8 +289,8 @@ Issue: {{issue_identifier}}`;
 
 	it("should include system prompt when resuming ClaudeRunner (bug fixed)", async () => {
 		// Reset mocks
-		vi.mocked(isAgentSessionCreatedWebhook).mockReturnValue(false);
-		vi.mocked(isAgentSessionPromptedWebhook).mockReturnValue(true);
+		(isAgentSessionCreatedWebhook as any).mockReturnValue(false);
+		(isAgentSessionPromptedWebhook as any).mockReturnValue(true);
 		capturedClaudeRunnerConfig = null;
 
 		// Arrange
@@ -304,7 +328,7 @@ Issue: {{issue_identifier}}`;
 		await handleUserPromptedAgentActivity(promptedWebhook, [mockRepository]);
 
 		// Assert - Bug is now fixed: system prompt is included!
-		expect(vi.mocked(ClaudeRunner)).toHaveBeenCalled();
+		expect(ClaudeRunner as any).toHaveBeenCalled();
 		expect(capturedClaudeRunnerConfig).toBeDefined();
 		// System prompt should include BOTH the debugger prompt AND the marker
 		expect(capturedClaudeRunnerConfig.appendSystemPrompt).toContain(

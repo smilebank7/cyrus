@@ -5,7 +5,6 @@
  * and verifies the full resultant prompts with subroutine content.
  */
 
-import { describe, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - Subroutines", () => {

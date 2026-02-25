@@ -1,28 +1,29 @@
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type {
 	Attachment,
 	AttachmentConnection,
 	LinearIssue,
 } from "@linear/sdk";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker";
 import type { EdgeWorkerConfig } from "../src/types";
 
 // Mock fs/promises
-vi.mock("node:fs/promises", () => ({
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	rename: vi.fn(),
-	readdir: vi.fn(),
+mock.module("node:fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock(),
+	writeFile: mock(),
+	mkdir: mock(),
+	rename: mock(),
+	readdir: mock(),
 }));
 
 // Mock file-type
-vi.mock("file-type", () => ({
-	fileTypeFromBuffer: vi.fn(),
+mock.module("file-type", () => ({
+	fileTypeFromBuffer: mock(),
 }));
 
 // Mock global fetch
-const mockFetch = vi.fn();
+const mockFetch = mock();
 global.fetch = mockFetch;
 
 describe("EdgeWorker - Native Attachments", () => {
@@ -51,7 +52,7 @@ describe("EdgeWorker - Native Attachments", () => {
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("downloadIssueAttachments", () => {
@@ -76,14 +77,14 @@ describe("EdgeWorker - Native Attachments", () => {
 				title: "Test Issue",
 				description:
 					"Issue with attachment URL https://uploads.linear.app/test.png",
-				attachments: vi.fn().mockResolvedValue({
+				attachments: mock().mockResolvedValue({
 					nodes: mockAttachments,
 				} as AttachmentConnection),
 			} as unknown as LinearIssue;
 
 			// Mock IssueTrackerService
 			const mockIssueTracker = {
-				getComments: vi.fn().mockResolvedValue([]),
+				getComments: mock().mockResolvedValue([]),
 			};
 			(edgeWorker as any).issueTrackers.set("test-repo", mockIssueTracker);
 
@@ -115,13 +116,13 @@ describe("EdgeWorker - Native Attachments", () => {
 				identifier: "PACK-204",
 				title: "Test Issue Without Attachments",
 				description: "No attachments here",
-				attachments: vi.fn().mockResolvedValue({
+				attachments: mock().mockResolvedValue({
 					nodes: [],
 				} as AttachmentConnection),
 			} as unknown as LinearIssue;
 
 			const mockIssueTracker = {
-				getComments: vi.fn().mockResolvedValue([]),
+				getComments: mock().mockResolvedValue([]),
 			};
 			(edgeWorker as any).issueTrackers.set("test-repo", mockIssueTracker);
 
@@ -144,11 +145,11 @@ describe("EdgeWorker - Native Attachments", () => {
 				identifier: "PACK-205",
 				title: "Test Issue with Error",
 				description: "Testing error handling",
-				attachments: vi.fn().mockRejectedValue(new Error("API Error")),
+				attachments: mock().mockRejectedValue(new Error("API Error")),
 			} as unknown as LinearIssue;
 
 			const mockIssueTracker = {
-				getComments: vi.fn().mockResolvedValue([]),
+				getComments: mock().mockResolvedValue([]),
 			};
 			(edgeWorker as any).issueTrackers.set("test-repo", mockIssueTracker);
 
@@ -173,8 +174,7 @@ describe("EdgeWorker - Native Attachments", () => {
 			const attachmentsDir = "/tmp/test-attachments";
 
 			// Mock downloadAttachment method
-			(edgeWorker as any).attachmentService.downloadAttachment = vi
-				.fn()
+			(edgeWorker as any).attachmentService.downloadAttachment = mock()
 				.mockResolvedValueOnce({
 					success: true,
 					fileType: ".png",
@@ -187,9 +187,8 @@ describe("EdgeWorker - Native Attachments", () => {
 				});
 
 			// Mock countExistingImages
-			(edgeWorker as any).attachmentService.countExistingImages = vi
-				.fn()
-				.mockResolvedValue(0);
+			(edgeWorker as any).attachmentService.countExistingImages =
+				mock().mockResolvedValue(0);
 
 			const result = await (edgeWorker as any).downloadCommentAttachments(
 				commentBody,
@@ -210,9 +209,12 @@ describe("EdgeWorker - Native Attachments", () => {
 			const attachmentsDir = "/tmp/test-attachments";
 
 			// Mock successful downloads
-			(edgeWorker as any).attachmentService.downloadAttachment = vi
-				.fn()
-				.mockResolvedValue({ success: true, fileType: ".png", isImage: true });
+			(edgeWorker as any).attachmentService.downloadAttachment =
+				mock().mockResolvedValue({
+					success: true,
+					fileType: ".png",
+					isImage: true,
+				});
 
 			const result = await (edgeWorker as any).downloadCommentAttachments(
 				commentBody,
@@ -248,9 +250,8 @@ describe("EdgeWorker - Native Attachments", () => {
 			const attachmentsDir = "/tmp/test-attachments";
 
 			// Mock download failure
-			(edgeWorker as any).attachmentService.downloadAttachment = vi
-				.fn()
-				.mockResolvedValue({ success: false });
+			(edgeWorker as any).attachmentService.downloadAttachment =
+				mock().mockResolvedValue({ success: false });
 
 			const result = await (edgeWorker as any).downloadCommentAttachments(
 				commentBody,
@@ -269,14 +270,16 @@ describe("EdgeWorker - Native Attachments", () => {
 				"Check this: [file.png](https://uploads.linear.app/ee2a1136-fe42-47ac-897f-f4ee8e824eb8/f43efb28-7db5-485b-aba1-bd5998bd46bc/a2e99ac8-337e-4b69-887e-e4cf0ddc42ab](https://uploads.linear.app/ee2a1136-fe42-47ac-897f-f4ee8e824eb8/f43efb28-7db5-485b-aba1-bd5998bd46bc/duplicate-url";
 
 			// Mock successful download for the correctly extracted URLs
-			(edgeWorker as any).attachmentService.downloadAttachment = vi
-				.fn()
-				.mockResolvedValue({ success: true, fileType: ".png", isImage: true });
+			(edgeWorker as any).attachmentService.downloadAttachment =
+				mock().mockResolvedValue({
+					success: true,
+					fileType: ".png",
+					isImage: true,
+				});
 
 			// Mock countExistingImages
-			(edgeWorker as any).attachmentService.countExistingImages = vi
-				.fn()
-				.mockResolvedValue(0);
+			(edgeWorker as any).attachmentService.countExistingImages =
+				mock().mockResolvedValue(0);
 
 			const result = await (edgeWorker as any).downloadCommentAttachments(
 				commentBody,

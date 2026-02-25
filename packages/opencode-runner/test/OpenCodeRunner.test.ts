@@ -1,20 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { OpenCodeMessageFormatter } from "../src/formatter.js";
 import { OpenCodeRunner } from "../src/OpenCodeRunner.js";
 import type { OpenCodeRunnerConfig } from "../src/types.js";
 
 // Mock child_process
-vi.mock("node:child_process", () => ({
-	spawn: vi.fn(),
+mock.module("node:child_process", () => ({
+	...require("node:child_process"),
+	spawn: mock(),
 }));
 
 // Mock fs
-vi.mock("node:fs", () => ({
-	createWriteStream: vi.fn(() => ({
-		write: vi.fn(),
-		end: vi.fn(),
+mock.module("node:fs", () => ({
+	...require("node:fs"),
+	createWriteStream: mock(() => ({
+		write: mock(),
+		end: mock(),
 	})),
-	mkdirSync: vi.fn(),
+	mkdirSync: mock(),
 }));
 
 function createConfig(
@@ -29,7 +31,7 @@ function createConfig(
 
 describe("OpenCodeRunner", () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 	});
 
 	it("should implement IAgentRunner interface", () => {
@@ -59,9 +61,9 @@ describe("OpenCodeRunner", () => {
 	});
 
 	it("should register event callbacks from config", () => {
-		const onMessage = vi.fn();
-		const onError = vi.fn();
-		const onComplete = vi.fn();
+		const onMessage = mock();
+		const onError = mock();
+		const onComplete = mock();
 		const runner = new OpenCodeRunner(
 			createConfig({ onMessage, onError, onComplete }),
 		);

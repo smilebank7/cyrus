@@ -1,22 +1,26 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { LinearClient } from "@linear/sdk";
 import type { EdgeWorkerConfig } from "sylas-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 
 // Mock modules
-vi.mock("@linear/sdk");
-vi.mock("../src/SharedApplicationServer.js", () => ({
-	SharedApplicationServer: vi.fn().mockImplementation(() => ({
-		start: vi.fn(),
-		registerLinearEventTransport: vi.fn(),
-		registerConfigUpdater: vi.fn(),
-		registerOAuthCallback: vi.fn(),
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	SharedApplicationServer: mock().mockImplementation(() => ({
+		start: mock(),
+		registerLinearEventTransport: mock(),
+		registerConfigUpdater: mock(),
+		registerOAuthCallback: mock(),
 	})),
 }));
 
 // Mock fs/promises for file operations
-vi.mock("node:fs/promises", () => ({
-	readFile: vi.fn().mockResolvedValue(
+mock.module("node:fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock().mockResolvedValue(
 		JSON.stringify({
 			repositories: [
 				{
@@ -34,14 +38,14 @@ vi.mock("node:fs/promises", () => ({
 			],
 		}),
 	),
-	writeFile: vi.fn().mockResolvedValue(undefined),
-	mkdir: vi.fn().mockResolvedValue(undefined),
-	readdir: vi.fn().mockResolvedValue([]),
-	rename: vi.fn().mockResolvedValue(undefined),
+	writeFile: mock().mockResolvedValue(undefined),
+	mkdir: mock().mockResolvedValue(undefined),
+	readdir: mock().mockResolvedValue([]),
+	rename: mock().mockResolvedValue(undefined),
 }));
 
 // Mock global fetch
-global.fetch = vi.fn();
+global.fetch = mock();
 
 describe("EdgeWorker LinearClient Wrapper", () => {
 	let edgeWorker: EdgeWorker;
@@ -49,7 +53,7 @@ describe("EdgeWorker LinearClient Wrapper", () => {
 	let mockLinearClient: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Setup mock config
 		mockConfig = {
@@ -77,23 +81,23 @@ describe("EdgeWorker LinearClient Wrapper", () => {
 
 		// Create mock LinearClient with methods and underlying GraphQL client
 		mockLinearClient = {
-			issue: vi.fn(),
+			issue: mock(),
 			viewer: Promise.resolve({
 				organization: Promise.resolve({
 					id: "workspace-123",
 					name: "Test Workspace",
 				}),
 			}),
-			createAgentActivity: vi.fn(),
+			createAgentActivity: mock(),
 			// Mock the underlying GraphQL client for token refresh patching
 			client: {
-				request: vi.fn(),
-				setHeader: vi.fn(),
+				request: mock(),
+				setHeader: mock(),
 			},
 		};
 
 		// Mock LinearClient constructor
-		vi.mocked(LinearClient).mockImplementation(() => mockLinearClient);
+		(LinearClient as any).mockImplementation(() => mockLinearClient);
 	});
 
 	describe("Auto-retry on 401 errors", () => {

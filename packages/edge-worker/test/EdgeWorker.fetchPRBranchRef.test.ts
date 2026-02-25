@@ -1,31 +1,54 @@
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { LinearClient } from "@linear/sdk";
 import { ClaudeRunner } from "sylas-claude-runner";
 import type { GitHubWebhookEvent } from "sylas-github-event-transport";
 import { issueCommentPayload } from "sylas-github-event-transport/test/fixtures";
 import { LinearEventTransport } from "sylas-linear-event-transport";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { SharedApplicationServer } from "../src/SharedApplicationServer.js";
 import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock dependencies
-vi.mock("sylas-claude-runner");
-vi.mock("sylas-linear-event-transport");
-vi.mock("@linear/sdk");
-vi.mock("../src/SharedApplicationServer.js");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = (await importOriginal()) as any;
+mock.module("sylas-claude-runner", () => ({
+	...require("sylas-claude-runner"),
+	ClaudeRunner: mock(),
+}));
+mock.module("sylas-linear-event-transport", () => ({
+	...require("sylas-linear-event-transport"),
+	LinearEventTransport: mock(),
+}));
+mock.module("@linear/sdk", () => ({
+	...require("@linear/sdk"),
+	LinearClient: mock(),
+}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	...require("../src/SharedApplicationServer.js"),
+	SharedApplicationServer: mock(),
+}));
+mock.module("../src/AgentSessionManager.js", () => ({
+	...require("../src/AgentSessionManager.js"),
+	AgentSessionManager: mock(),
+}));
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core") as any;
 	return {
 		...actual,
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
-vi.mock("file-type");
+mock.module("file-type", () => ({}));
 
 describe("EdgeWorker - fetchPRBranchRef", () => {
 	let edgeWorker: EdgeWorker;
@@ -36,62 +59,62 @@ describe("EdgeWorker - fetchPRBranchRef", () => {
 	let mockRepository: RepositoryConfig;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Suppress console output
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
 
 		// Mock LinearClient
 		mockLinearClient = {
-			issue: vi.fn().mockResolvedValue({
+			issue: mock().mockResolvedValue({
 				id: "test-issue-id",
 				identifier: "TEST-1",
 				title: "Test Issue",
 				description: "Test description",
 			}),
 		};
-		vi.mocked(LinearClient).mockImplementation(() => mockLinearClient);
+		(LinearClient as any).mockImplementation(() => mockLinearClient);
 
 		// Mock ClaudeRunner
 		mockClaudeRunner = {
-			run: vi.fn().mockResolvedValue({
+			run: mock().mockResolvedValue({
 				sessionId: "test-session-id",
 				messageCount: 10,
 			}),
-			on: vi.fn(),
-			removeAllListeners: vi.fn(),
+			on: mock(),
+			removeAllListeners: mock(),
 		};
-		vi.mocked(ClaudeRunner).mockImplementation(() => mockClaudeRunner);
+		(ClaudeRunner as any).mockImplementation(() => mockClaudeRunner);
 
 		// Mock AgentSessionManager
 		mockAgentSessionManager = {
-			createSession: vi.fn().mockResolvedValue(undefined),
-			recordThought: vi.fn().mockResolvedValue(undefined),
-			recordAction: vi.fn().mockResolvedValue(undefined),
-			completeSession: vi.fn().mockResolvedValue(undefined),
-			handleClaudeMessage: vi.fn().mockResolvedValue(undefined),
+			createSession: mock().mockResolvedValue(undefined),
+			recordThought: mock().mockResolvedValue(undefined),
+			recordAction: mock().mockResolvedValue(undefined),
+			completeSession: mock().mockResolvedValue(undefined),
+			handleClaudeMessage: mock().mockResolvedValue(undefined),
 		};
-		vi.mocked(AgentSessionManager).mockImplementation(
+		(AgentSessionManager as any).mockImplementation(
 			() => mockAgentSessionManager,
 		);
 
 		// Mock LinearEventTransport
 		const mockLinearEventTransport = {
-			on: vi.fn(),
-			start: vi.fn().mockResolvedValue(undefined),
-			stop: vi.fn().mockResolvedValue(undefined),
+			on: mock(),
+			start: mock().mockResolvedValue(undefined),
+			stop: mock().mockResolvedValue(undefined),
 		};
-		vi.mocked(LinearEventTransport).mockImplementation(
+		(LinearEventTransport as any).mockImplementation(
 			() => mockLinearEventTransport,
 		);
 
 		// Mock SharedApplicationServer
 		const mockSharedAppServer = {
-			start: vi.fn().mockResolvedValue(undefined),
-			stop: vi.fn().mockResolvedValue(undefined),
+			start: mock().mockResolvedValue(undefined),
+			stop: mock().mockResolvedValue(undefined),
 		};
-		vi.mocked(SharedApplicationServer).mockImplementation(
+		(SharedApplicationServer as any).mockImplementation(
 			() => mockSharedAppServer,
 		);
 
@@ -115,7 +138,7 @@ describe("EdgeWorker - fetchPRBranchRef", () => {
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("Authentication Token Handling", () => {
@@ -129,7 +152,7 @@ describe("EdgeWorker - fetchPRBranchRef", () => {
 			};
 
 			// Mock GitHub API response
-			const mockFetch = vi.fn().mockResolvedValue({
+			const mockFetch = mock().mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					head: {
@@ -174,7 +197,7 @@ describe("EdgeWorker - fetchPRBranchRef", () => {
 			};
 
 			// Mock GitHub API response
-			const mockFetch = vi.fn().mockResolvedValue({
+			const mockFetch = mock().mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					head: {
@@ -221,7 +244,7 @@ describe("EdgeWorker - fetchPRBranchRef", () => {
 			};
 
 			// Mock GitHub API response (this will fail with 404 for private repos)
-			const mockFetch = vi.fn().mockResolvedValue({
+			const mockFetch = mock().mockResolvedValue({
 				ok: false,
 				status: 404,
 			});

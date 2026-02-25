@@ -4,7 +4,6 @@
  * Tests prompt assembly for continuation (non-streaming, non-new) sessions.
  */
 
-import { describe, expect, it } from "vitest";
 import { createTestWorker, scenario } from "./prompt-assembly-utils.js";
 
 describe("Prompt Assembly - Continuation Sessions", () => {

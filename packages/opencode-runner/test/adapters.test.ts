@@ -20,7 +20,6 @@ import type {
 	ToolStateRunning,
 } from "@opencode-ai/sdk";
 import type { SDKAssistantMessage, SDKUserMessage } from "sylas-core";
-import { describe, expect, it } from "vitest";
 import {
 	createUserMessage,
 	errorEventToSDKMessage,

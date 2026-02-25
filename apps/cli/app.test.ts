@@ -1,39 +1,43 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock readline
-vi.mock("node:readline", () => ({
-	createInterface: vi.fn(() => ({
-		question: vi.fn(),
-		close: vi.fn(),
+mock.module("node:readline", () => ({
+	...require("node:readline"),
+	createInterface: mock(() => ({
+		question: mock(),
+		close: mock(),
 	})),
 }));
 
 // Mock child_process
-const mockExecSync = vi.fn();
-vi.mock("node:child_process", () => ({
+const mockExecSync = mock();
+mock.module("node:child_process", () => ({
+	...require("node:child_process"),
 	execSync: mockExecSync,
 }));
 
 // Mock fs
-const mockExistsSync = vi.fn();
-const mockMkdirSync = vi.fn();
-const mockReadFileSync = vi.fn();
-const mockWriteFileSync = vi.fn();
-vi.mock("node:fs", () => ({
+const mockExistsSync = mock();
+const mockMkdirSync = mock();
+const mockReadFileSync = mock();
+const mockWriteFileSync = mock();
+mock.module("node:fs", () => ({
+	...require("node:fs"),
 	existsSync: mockExistsSync,
 	mkdirSync: mockMkdirSync,
 	readFileSync: mockReadFileSync,
 	writeFileSync: mockWriteFileSync,
-	copyFileSync: vi.fn(),
+	copyFileSync: mock(),
 }));
 
 // Mock path
-vi.mock("node:path", () => ({
-	join: vi.fn((...parts) => parts.join("/")),
-	resolve: vi.fn((...parts) => `/${parts.join("/")}`),
-	dirname: vi.fn((path) => path.split("/").slice(0, -1).join("/")),
-	basename: vi.fn((path) => path.split("/").pop()),
-	homedir: vi.fn(() => "/home/user"),
+mock.module("node:path", () => ({
+	...require("node:path"),
+	join: mock((...parts) => parts.join("/")),
+	resolve: mock((...parts) => `/${parts.join("/")}`),
+	dirname: mock((path) => path.split("/").slice(0, -1).join("/")),
+	basename: mock((path) => path.split("/").pop()),
+	homedir: mock(() => "/home/user"),
 }));
 
 describe("Project Keys Parsing", () => {
@@ -140,7 +144,9 @@ describe("Git Worktree Creation - Windows Compatibility", () => {
 	// by mocking execSync to simulate Windows Command Prompt behavior
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
+		mockExecSync.mockClear?.();
+		mockMkdirSync.mockClear?.();
 		// Reset to default successful behavior
 		mockExecSync.mockReturnValue("");
 		mockExistsSync.mockReturnValue(false);
@@ -264,7 +270,7 @@ describe("Git Worktree Creation - Windows Compatibility", () => {
 
 		// Import fs dynamically to get the mocked version
 		// Mock mkdirSync to verify it's called correctly
-		mockMkdirSync.mockImplementation(vi.fn());
+		mockMkdirSync.mockImplementation(mock());
 
 		// Test each path
 		for (const testPath of testPaths) {
@@ -285,7 +291,7 @@ describe("Git Worktree Creation - Windows Compatibility", () => {
 		// Instead we use Node.js native mkdirSync with recursive option
 
 		// Mock mkdirSync to verify it's called correctly
-		mockMkdirSync.mockImplementation(vi.fn());
+		mockMkdirSync.mockImplementation(mock());
 
 		// Simulate the two scenarios from the fixed code:
 
@@ -316,7 +322,12 @@ describe("Git Worktree Creation - Windows Compatibility", () => {
 
 describe("Windows Bash Script Compatibility", () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
+		mockExecSync.mockClear?.();
+		mockExistsSync.mockClear?.();
+		mockMkdirSync.mockClear?.();
+		mockReadFileSync.mockClear?.();
+		mockWriteFileSync.mockClear?.();
 	});
 
 	it("should demonstrate Windows bash command compatibility issue", () => {
@@ -454,7 +465,7 @@ describe("Windows Bash Script Compatibility", () => {
 
 	it("should successfully execute cross-platform setup scripts", () => {
 		// Test the new cross-platform script detection and execution logic
-		mockMkdirSync.mockImplementation(vi.fn());
+		mockMkdirSync.mockImplementation(mock());
 
 		// Test scenarios for different platforms and available scripts
 		const testScenarios = [
@@ -499,7 +510,7 @@ describe("Windows Bash Script Compatibility", () => {
 
 		for (const scenario of testScenarios) {
 			// Reset mocks
-			vi.clearAllMocks();
+			mock.restore();
 
 			// Mock platform
 			Object.defineProperty(process, "platform", {
@@ -639,7 +650,12 @@ describe("Windows Bash Script Compatibility", () => {
 
 describe("ConfigService - Skill Migration", () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
+		mockExecSync.mockClear?.();
+		mockExistsSync.mockClear?.();
+		mockMkdirSync.mockClear?.();
+		mockReadFileSync.mockClear?.();
+		mockWriteFileSync.mockClear?.();
 	});
 
 	it("should add Skill to allowedTools arrays that don't have it", async () => {
@@ -665,13 +681,13 @@ describe("ConfigService - Skill Migration", () => {
 
 		// Create a mock logger
 		const mockLogger = {
-			info: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			success: vi.fn(),
-			debug: vi.fn(),
-			raw: vi.fn(),
-			divider: vi.fn(),
+			info: mock(),
+			error: mock(),
+			warn: mock(),
+			success: mock(),
+			debug: mock(),
+			raw: mock(),
+			divider: mock(),
 		};
 
 		const configService = new ConfigService(
@@ -718,13 +734,13 @@ describe("ConfigService - Skill Migration", () => {
 		const { ConfigService } = await import("./src/services/ConfigService.js");
 
 		const mockLogger = {
-			info: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			success: vi.fn(),
-			debug: vi.fn(),
-			raw: vi.fn(),
-			divider: vi.fn(),
+			info: mock(),
+			error: mock(),
+			warn: mock(),
+			success: mock(),
+			debug: mock(),
+			raw: mock(),
+			divider: mock(),
 		};
 
 		const configService = new ConfigService(
@@ -768,13 +784,13 @@ describe("ConfigService - Skill Migration", () => {
 		const { ConfigService } = await import("./src/services/ConfigService.js");
 
 		const mockLogger = {
-			info: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			success: vi.fn(),
-			debug: vi.fn(),
-			raw: vi.fn(),
-			divider: vi.fn(),
+			info: mock(),
+			error: mock(),
+			warn: mock(),
+			success: mock(),
+			debug: mock(),
+			raw: mock(),
+			divider: mock(),
 		};
 
 		const configService = new ConfigService(
@@ -824,13 +840,13 @@ describe("ConfigService - Skill Migration", () => {
 		const { ConfigService } = await import("./src/services/ConfigService.js");
 
 		const mockLogger = {
-			info: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			success: vi.fn(),
-			debug: vi.fn(),
-			raw: vi.fn(),
-			divider: vi.fn(),
+			info: mock(),
+			error: mock(),
+			warn: mock(),
+			success: mock(),
+			debug: mock(),
+			raw: mock(),
+			divider: mock(),
 		};
 
 		const configService = new ConfigService(
@@ -873,13 +889,13 @@ describe("ConfigService - Skill Migration", () => {
 		const { ConfigService } = await import("./src/services/ConfigService.js");
 
 		const mockLogger = {
-			info: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			success: vi.fn(),
-			debug: vi.fn(),
-			raw: vi.fn(),
-			divider: vi.fn(),
+			info: mock(),
+			error: mock(),
+			warn: mock(),
+			success: mock(),
+			debug: mock(),
+			raw: mock(),
+			divider: mock(),
 		};
 
 		const configService = new ConfigService(

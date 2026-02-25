@@ -1,5 +1,3 @@
-import { describe, expect, it } from "vitest";
-
 describe("Version Tag Extraction", () => {
 	// Test the version extraction regex
 	const extractVersionTag = (templateContent: string): string | undefined => {

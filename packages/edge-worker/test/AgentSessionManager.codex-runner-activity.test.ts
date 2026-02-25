@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { CodexRunner } from "sylas-codex-runner";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager";
 import type { IActivitySink } from "../src/sinks/IActivitySink";
 
@@ -7,18 +7,18 @@ describe("AgentSessionManager - Codex tool activity mapping", () => {
 	let manager: AgentSessionManager;
 	let runner: CodexRunner;
 	let mockActivitySink: IActivitySink;
-	let postActivitySpy: ReturnType<typeof vi.fn>;
+	let postActivitySpy: ReturnType<typeof mock>;
 	const sessionId = "test-session-codex";
 	const issueId = "issue-codex";
 
 	beforeEach(() => {
 		mockActivitySink = {
 			id: "test-workspace",
-			postActivity: vi.fn().mockResolvedValue({ activityId: "activity-123" }),
-			createAgentSession: vi.fn().mockResolvedValue("session-123"),
+			postActivity: mock().mockResolvedValue({ activityId: "activity-123" }),
+			createAgentSession: mock().mockResolvedValue("session-123"),
 		};
 
-		postActivitySpy = vi.spyOn(mockActivitySink, "postActivity");
+		postActivitySpy = spyOn(mockActivitySink, "postActivity");
 		manager = new AgentSessionManager(mockActivitySink);
 		runner = new CodexRunner({
 			workingDirectory: "/Users/connor/code/sylas",

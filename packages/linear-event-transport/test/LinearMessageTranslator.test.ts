@@ -1,6 +1,5 @@
 import type { LinearWebhookPayload } from "@linear/sdk/webhooks";
 import type { LinearSessionStartPlatformData } from "sylas-core";
-import { describe, expect, it } from "vitest";
 import { LinearMessageTranslator } from "../src/LinearMessageTranslator.js";
 
 describe("LinearMessageTranslator", () => {

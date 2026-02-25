@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM oven/bun:1-debian
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,23 +18,17 @@ RUN mkdir -p -m 755 /etc/apt/keyrings \
     && apt-get update && apt-get install -y gh \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pnpm and set up global bin
-RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN mkdir -p $PNPM_HOME
-
 # Install opencode CLI + oh-my-opencode plugin globally
-RUN npm install -g opencode-ai oh-my-opencode@latest
+RUN bun install -g opencode-ai oh-my-opencode@latest
 
 # Copy source and build
 WORKDIR /app
 COPY . .
-RUN pnpm install --no-frozen-lockfile && pnpm build
+RUN bun install && bun run build
 
 # Link CLI globally
 WORKDIR /app/apps/cli
-RUN pnpm link --global
+RUN bun link
 
 # Bake entrypoint into image (no volume mount needed)
 COPY deploy/entrypoint.sh /entrypoint.sh

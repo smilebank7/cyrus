@@ -12,11 +12,11 @@
 		"build": "tsc",
 		"start": "node dist/src/app.js",
 		"dev": "tsc --watch",
-		"test": "vitest run",
-		"test:run": "vitest run --passWithNoTests",
-		"test:watch": "vitest",
+		"test": "bun test",
+		"test:run": "bun test",
+		"test:watch": "bun test --watch",
 		"typecheck": "tsc --noEmit",
-		"prepublishOnly": "cd ../.. && pnpm build"
+		"prepublishOnly": "cd ../.. && bun run build"
 	},
 	"files": [
 		"dist",
@@ -58,9 +58,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
-		"@vitest/ui": "^3.1.4",
 		"nodemon": "^2.0.22",
-		"typescript": "^5.3.3",
-		"vitest": "^3.1.4"
+		"typescript": "^5.3.3"
 	}
 }

@@ -1,5 +1,4 @@
 import type { SlackSessionStartPlatformData } from "sylas-core";
-import { describe, expect, it } from "vitest";
 import {
 	SlackMessageTranslator,
 	stripMention,

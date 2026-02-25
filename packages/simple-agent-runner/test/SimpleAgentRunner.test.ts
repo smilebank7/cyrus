@@ -1,5 +1,4 @@
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import { describe, expect, it } from "vitest";
 import { InvalidResponseError, SimpleAgentError } from "../src/errors.js";
 import { SimpleAgentRunner } from "../src/SimpleAgentRunner.js";
 import type {

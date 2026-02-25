@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { GeminiMessageFormatter } from "../src/formatter.js";
 
 describe("GeminiMessageFormatter", () => {

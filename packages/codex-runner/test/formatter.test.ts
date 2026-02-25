@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { CodexMessageFormatter } from "../src/formatter.js";
 
 describe("CodexMessageFormatter", () => {

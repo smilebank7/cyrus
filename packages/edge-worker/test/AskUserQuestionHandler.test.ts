@@ -1,5 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AskUserQuestionInput, IIssueTrackerService } from "sylas-core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AskUserQuestionHandler } from "../src/AskUserQuestionHandler.js";
 
 /**
@@ -15,16 +15,16 @@ describe("AskUserQuestionHandler", () => {
 	let handler: AskUserQuestionHandler;
 	let mockIssueTracker: IIssueTrackerService;
 	let mockGetIssueTracker: (orgId: string) => IIssueTrackerService | null;
-	let mockCreateAgentActivity: ReturnType<typeof vi.fn>;
+	let mockCreateAgentActivity: ReturnType<typeof mock>;
 
 	beforeEach(() => {
 		// Setup mock issue tracker
-		mockCreateAgentActivity = vi.fn().mockResolvedValue({ success: true });
+		mockCreateAgentActivity = mock().mockResolvedValue({ success: true });
 		mockIssueTracker = {
 			createAgentActivity: mockCreateAgentActivity,
 		} as unknown as IIssueTrackerService;
 
-		mockGetIssueTracker = vi.fn().mockReturnValue(mockIssueTracker);
+		mockGetIssueTracker = mock().mockReturnValue(mockIssueTracker);
 
 		handler = new AskUserQuestionHandler({
 			getIssueTracker: mockGetIssueTracker,
@@ -32,7 +32,7 @@ describe("AskUserQuestionHandler", () => {
 	});
 
 	afterEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 	});
 
 	describe("input validation", () => {

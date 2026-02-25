@@ -1,66 +1,75 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock fs/promises
-vi.mock("fs/promises", () => ({
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	rename: vi.fn(),
-	readdir: vi.fn().mockResolvedValue([]),
+mock.module("fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock(),
+	writeFile: mock(),
+	mkdir: mock(),
+	rename: mock(),
+	readdir: mock().mockResolvedValue([]),
 }));
 
 // Mock dependencies
-vi.mock("sylas-claude-runner");
-vi.mock("sylas-codex-runner");
-vi.mock("sylas-gemini-runner");
-vi.mock("sylas-linear-event-transport");
-vi.mock("@linear/sdk");
-vi.mock("../src/SharedApplicationServer.js", () => ({
-	SharedApplicationServer: vi.fn().mockImplementation(() => ({
-		initializeFastify: vi.fn(),
-		getFastifyInstance: vi.fn().mockReturnValue({
-			get: vi.fn(),
-			post: vi.fn(),
+mock.module("sylas-claude-runner", () => ({}));
+mock.module("sylas-codex-runner", () => ({}));
+mock.module("sylas-gemini-runner", () => ({}));
+mock.module("sylas-linear-event-transport", () => ({}));
+mock.module("@linear/sdk", () => ({}));
+mock.module("../src/SharedApplicationServer.js", () => ({
+	SharedApplicationServer: mock().mockImplementation(() => ({
+		initializeFastify: mock(),
+		getFastifyInstance: mock().mockReturnValue({
+			get: mock(),
+			post: mock(),
 		}),
-		start: vi.fn().mockResolvedValue(undefined),
-		stop: vi.fn().mockResolvedValue(undefined),
-		getWebhookUrl: vi.fn().mockReturnValue("http://localhost:3456/webhook"),
+		start: mock().mockResolvedValue(undefined),
+		stop: mock().mockResolvedValue(undefined),
+		getWebhookUrl: mock().mockReturnValue("http://localhost:3456/webhook"),
 	})),
 }));
-vi.mock("../src/AgentSessionManager.js", () => ({
-	AgentSessionManager: vi.fn().mockImplementation(() => ({
-		getAllAgentRunners: vi.fn().mockReturnValue([]),
-		getAllSessions: vi.fn().mockReturnValue([]),
-		createLinearAgentSession: vi.fn(),
-		getSession: vi.fn(),
-		getActiveSessionsByIssueId: vi.fn().mockReturnValue([]),
-		on: vi.fn(), // EventEmitter method
-		emit: vi.fn(), // EventEmitter method
+mock.module("../src/AgentSessionManager.js", () => ({
+	AgentSessionManager: mock().mockImplementation(() => ({
+		getAllAgentRunners: mock().mockReturnValue([]),
+		getAllSessions: mock().mockReturnValue([]),
+		createLinearAgentSession: mock(),
+		getSession: mock(),
+		getActiveSessionsByIssueId: mock().mockReturnValue([]),
+		on: mock(), // EventEmitter method
+		emit: mock(), // EventEmitter method
 	})),
 }));
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = (await importOriginal()) as any;
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core") as any;
 	return {
 		...actual,
-		isAgentSessionCreatedWebhook: vi.fn().mockReturnValue(false),
-		isAgentSessionPromptedWebhook: vi.fn().mockReturnValue(false),
-		isIssueAssignedWebhook: vi.fn().mockReturnValue(false),
-		isIssueCommentMentionWebhook: vi.fn().mockReturnValue(false),
-		isIssueNewCommentWebhook: vi.fn().mockReturnValue(false),
-		isIssueUnassignedWebhook: vi.fn().mockReturnValue(false),
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		isAgentSessionCreatedWebhook: mock().mockReturnValue(false),
+		isAgentSessionPromptedWebhook: mock().mockReturnValue(false),
+		isIssueAssignedWebhook: mock().mockReturnValue(false),
+		isIssueCommentMentionWebhook: mock().mockReturnValue(false),
+		isIssueNewCommentWebhook: mock().mockReturnValue(false),
+		isIssueUnassignedWebhook: mock().mockReturnValue(false),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
-vi.mock("file-type");
-vi.mock("chokidar", () => ({
-	watch: vi.fn().mockReturnValue({
-		on: vi.fn().mockReturnThis(),
-		close: vi.fn().mockResolvedValue(undefined),
+mock.module("file-type", () => ({}));
+mock.module("chokidar", () => ({
+	watch: mock().mockReturnValue({
+		on: mock().mockReturnThis(),
+		close: mock().mockResolvedValue(undefined),
 	}),
 }));
 
@@ -80,12 +89,12 @@ describe("EdgeWorker - Version Endpoint", () => {
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Mock console methods
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "warn").mockImplementation(() => {});
 
 		mockConfig = {
 			platform: "linear",
@@ -106,26 +115,26 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 	describe("registerVersionEndpoint", () => {
 		it("should register GET /version endpoint with Fastify", async () => {
-			const mockGet = vi.fn();
+			const mockGet = mock();
 			const mockFastify = {
 				get: mockGet,
-				post: vi.fn(),
+				post: mock(),
 			};
 
 			// Create EdgeWorker with mock that captures the registered handler
 			const { SharedApplicationServer } = await import(
 				"../src/SharedApplicationServer.js"
 			);
-			vi.mocked(SharedApplicationServer).mockImplementation(
+			(SharedApplicationServer as any).mockImplementation(
 				() =>
 					({
-						initializeFastify: vi.fn(),
-						getFastifyInstance: vi.fn().mockReturnValue(mockFastify),
-						start: vi.fn().mockResolvedValue(undefined),
-						stop: vi.fn().mockResolvedValue(undefined),
-						getWebhookUrl: vi
-							.fn()
-							.mockReturnValue("http://localhost:3456/webhook"),
+						initializeFastify: mock(),
+						getFastifyInstance: mock().mockReturnValue(mockFastify),
+						start: mock().mockResolvedValue(undefined),
+						stop: mock().mockResolvedValue(undefined),
+						getWebhookUrl: mock().mockReturnValue(
+							"http://localhost:3456/webhook",
+						),
 					}) as any,
 			);
 
@@ -140,29 +149,29 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 		it("should return null version when version is not provided", async () => {
 			let capturedHandler: any = null;
-			const mockGet = vi.fn((path: string, handler: any) => {
+			const mockGet = mock((path: string, handler: any) => {
 				if (path === "/version") {
 					capturedHandler = handler;
 				}
 			});
 			const mockFastify = {
 				get: mockGet,
-				post: vi.fn(),
+				post: mock(),
 			};
 
 			const { SharedApplicationServer } = await import(
 				"../src/SharedApplicationServer.js"
 			);
-			vi.mocked(SharedApplicationServer).mockImplementation(
+			(SharedApplicationServer as any).mockImplementation(
 				() =>
 					({
-						initializeFastify: vi.fn(),
-						getFastifyInstance: vi.fn().mockReturnValue(mockFastify),
-						start: vi.fn().mockResolvedValue(undefined),
-						stop: vi.fn().mockResolvedValue(undefined),
-						getWebhookUrl: vi
-							.fn()
-							.mockReturnValue("http://localhost:3456/webhook"),
+						initializeFastify: mock(),
+						getFastifyInstance: mock().mockReturnValue(mockFastify),
+						start: mock().mockResolvedValue(undefined),
+						stop: mock().mockResolvedValue(undefined),
+						getWebhookUrl: mock().mockReturnValue(
+							"http://localhost:3456/webhook",
+						),
 					}) as any,
 			);
 
@@ -172,8 +181,8 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 			// Mock reply object
 			const mockReply = {
-				status: vi.fn().mockReturnThis(),
-				send: vi.fn().mockReturnThis(),
+				status: mock().mockReturnThis(),
+				send: mock().mockReturnThis(),
 			};
 
 			// Call the captured handler
@@ -188,29 +197,29 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 		it("should return version when version is provided", async () => {
 			let capturedHandler: any = null;
-			const mockGet = vi.fn((path: string, handler: any) => {
+			const mockGet = mock((path: string, handler: any) => {
 				if (path === "/version") {
 					capturedHandler = handler;
 				}
 			});
 			const mockFastify = {
 				get: mockGet,
-				post: vi.fn(),
+				post: mock(),
 			};
 
 			const { SharedApplicationServer } = await import(
 				"../src/SharedApplicationServer.js"
 			);
-			vi.mocked(SharedApplicationServer).mockImplementation(
+			(SharedApplicationServer as any).mockImplementation(
 				() =>
 					({
-						initializeFastify: vi.fn(),
-						getFastifyInstance: vi.fn().mockReturnValue(mockFastify),
-						start: vi.fn().mockResolvedValue(undefined),
-						stop: vi.fn().mockResolvedValue(undefined),
-						getWebhookUrl: vi
-							.fn()
-							.mockReturnValue("http://localhost:3456/webhook"),
+						initializeFastify: mock(),
+						getFastifyInstance: mock().mockReturnValue(mockFastify),
+						start: mock().mockResolvedValue(undefined),
+						stop: mock().mockResolvedValue(undefined),
+						getWebhookUrl: mock().mockReturnValue(
+							"http://localhost:3456/webhook",
+						),
 					}) as any,
 			);
 
@@ -224,8 +233,8 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 			// Mock reply object
 			const mockReply = {
-				status: vi.fn().mockReturnThis(),
-				send: vi.fn().mockReturnThis(),
+				status: mock().mockReturnThis(),
+				send: mock().mockReturnThis(),
 			};
 
 			// Call the captured handler
@@ -240,29 +249,29 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 		it("should return empty string for empty string version", async () => {
 			let capturedHandler: any = null;
-			const mockGet = vi.fn((path: string, handler: any) => {
+			const mockGet = mock((path: string, handler: any) => {
 				if (path === "/version") {
 					capturedHandler = handler;
 				}
 			});
 			const mockFastify = {
 				get: mockGet,
-				post: vi.fn(),
+				post: mock(),
 			};
 
 			const { SharedApplicationServer } = await import(
 				"../src/SharedApplicationServer.js"
 			);
-			vi.mocked(SharedApplicationServer).mockImplementation(
+			(SharedApplicationServer as any).mockImplementation(
 				() =>
 					({
-						initializeFastify: vi.fn(),
-						getFastifyInstance: vi.fn().mockReturnValue(mockFastify),
-						start: vi.fn().mockResolvedValue(undefined),
-						stop: vi.fn().mockResolvedValue(undefined),
-						getWebhookUrl: vi
-							.fn()
-							.mockReturnValue("http://localhost:3456/webhook"),
+						initializeFastify: mock(),
+						getFastifyInstance: mock().mockReturnValue(mockFastify),
+						start: mock().mockResolvedValue(undefined),
+						stop: mock().mockResolvedValue(undefined),
+						getWebhookUrl: mock().mockReturnValue(
+							"http://localhost:3456/webhook",
+						),
 					}) as any,
 			);
 
@@ -277,8 +286,8 @@ describe("EdgeWorker - Version Endpoint", () => {
 
 			// Mock reply object
 			const mockReply = {
-				status: vi.fn().mockReturnThis(),
-				send: vi.fn().mockReturnThis(),
+				status: mock().mockReturnThis(),
+				send: mock().mockReturnThis(),
 			};
 
 			// Call the captured handler

@@ -1,20 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { GitHubCommentService } from "../src/GitHubCommentService.js";
 
 // Mock global fetch
-const mockFetch = vi.fn();
+const mockFetch = mock();
 global.fetch = mockFetch;
 
 describe("GitHubCommentService", () => {
 	let service: GitHubCommentService;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		service = new GitHubCommentService();
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		mock.restore();
 	});
 
 	describe("constructor", () => {

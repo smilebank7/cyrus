@@ -1,8 +1,8 @@
+import { afterEach, mock } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SDKMessage } from "sylas-claude-runner";
-import { vi } from "vitest";
 
 // Keep Claude SDK debug output inside the test workspace to avoid HOME write restrictions.
 const claudeConfigDir =
@@ -14,11 +14,11 @@ mkdirSync(join(claudeConfigDir, "debug"), { recursive: true });
 // Mock console methods to reduce noise in tests
 global.console = {
 	...console,
-	log: vi.fn(),
-	debug: vi.fn(),
-	info: vi.fn(),
-	warn: vi.fn(),
-	error: vi.fn(),
+	log: mock(),
+	debug: mock(),
+	info: mock(),
+	warn: mock(),
+	error: mock(),
 };
 
 // Mock webhook event helpers - updated to match native webhook format
@@ -192,7 +192,14 @@ export const mockClaudeResultMessage = (
 		...(subtype === "success" && { result: "Task completed successfully" }),
 	}) as any;
 
-// Reset all mocks after each test
+// Clear console mock call history between tests so assertions only see calls from the current test.
+// Note: mock.restore() does NOT undo manual global.console replacement, so the mocks persist
+// across all tests in a file — only call counts/args need resetting.
 afterEach(() => {
-	vi.clearAllMocks();
+	(console.log as any).mockClear?.();
+	(console.debug as any).mockClear?.();
+	(console.info as any).mockClear?.();
+	(console.warn as any).mockClear?.();
+	(console.error as any).mockClear?.();
+	mock.restore();
 });

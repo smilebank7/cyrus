@@ -1,33 +1,35 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitService } from "../src/GitService.js";
 
-vi.mock("node:child_process", () => ({
-	execSync: vi.fn(),
+mock.module("node:child_process", () => ({
+	...require("node:child_process"),
+	execSync: mock(),
 }));
 
-vi.mock("node:fs", () => ({
-	existsSync: vi.fn(() => true),
-	mkdirSync: vi.fn(),
-	statSync: vi.fn(),
+mock.module("node:fs", () => ({
+	...require("node:fs"),
+	existsSync: mock(() => true),
+	mkdirSync: mock(),
+	statSync: mock(),
 }));
 
-const mockExecSync = vi.mocked(execSync);
-const mockExistsSync = vi.mocked(existsSync);
+const mockExecSync = execSync as any;
+const mockExistsSync = existsSync as any;
 
 describe("GitService", () => {
 	let gitService: GitService;
 	const mockLogger: any = {
-		info: vi.fn(),
-		warn: vi.fn(),
-		error: vi.fn(),
-		debug: vi.fn(),
-		withContext: vi.fn().mockReturnThis(),
+		info: mock(),
+		warn: mock(),
+		error: mock(),
+		debug: mock(),
+		withContext: mock().mockReturnThis(),
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		gitService = new GitService(mockLogger);
 	});
 

@@ -10,24 +10,24 @@ on:
       - main
       - 'cypack-*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [20.x, 22.x]
-    
+
     steps:
     - uses: actions/checkout@v4
-    
-    - uses: actions/setup-node@v4
+
+    - uses: oven-sh/setup-bun@v2
       with:
-        node-version: ${{ matrix.node-version }}
-    
+        bun-version: latest
+
     - name: Install dependencies
-      uses: ./.github/actions/install-dependencies
-    
+      run: bun install
+
     - name: Create .env file
       run: |
         cat > .env << EOF
@@ -37,19 +37,31 @@ jobs:
         PROMPT_TEMPLATE_PATH=./examples/prompt-template.txt
         ANTHROPIC_API_KEY=test
         EOF
-    
+
     - name: Run Biome
-      run: pnpm biome ci
-    
+      run: bun run biome ci
+
     - name: Build Packages
-      run: pnpm build
-    
+      run: bun run build
+
+    - name: Type Check
+      run: bun run typecheck
+
     - name: Run Tests
-      run: pnpm -r test:run
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
-      continue-on-error: true
-      with:
-        directory: ./coverage/
-        fail_ci_if_error: false
+      run: |
+        failed=0
+        for f in $(find packages apps -name '*.test.ts' -not -path '*/node_modules/*' | sort); do
+          # Resolve the package directory (containing package.json) for this test file
+          pkg_dir="$f"
+          while [ "$pkg_dir" != "." ] && [ ! -f "$pkg_dir/package.json" ]; do
+            pkg_dir=$(dirname "$pkg_dir")
+          done
+          # Run test from its package directory so bunfig.toml is picked up
+          rel_path="${f#"$pkg_dir/"}"
+          if ! (cd "$pkg_dir" && bun test "./$rel_path") > /dev/null 2>&1; then
+            echo "FAIL: $f"
+            (cd "$pkg_dir" && bun test "./$rel_path") 2>&1 | tail -20
+            failed=1
+          fi
+        done
+        exit $failed

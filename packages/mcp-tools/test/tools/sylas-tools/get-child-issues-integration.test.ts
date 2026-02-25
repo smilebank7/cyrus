@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { createSylasToolsServer } from "../../../src/tools/sylas-tools/index.js";
 
 describe("linear_get_child_issues tool integration", () => {

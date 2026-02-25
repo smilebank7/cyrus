@@ -1,28 +1,36 @@
 import { EventEmitter } from "node:events";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the Claude SDK
-vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
-	query: vi.fn(),
+mock.module("@anthropic-ai/claude-agent-sdk", () => ({
+	query: mock(),
 }));
 
 // Mock file system operations
-vi.mock("fs", () => ({
-	mkdirSync: vi.fn(),
-	existsSync: vi.fn(() => false),
-	readFileSync: vi.fn(() => ""),
-	createWriteStream: vi.fn(() => ({
-		write: vi.fn(),
-		end: vi.fn(),
-		on: vi.fn(),
+mock.module("fs", () => ({
+	mkdirSync: mock(),
+	existsSync: mock(() => false),
+	readFileSync: mock(() => ""),
+	createWriteStream: mock(() => ({
+		write: mock(),
+		end: mock(),
+		on: mock(),
 	})),
 }));
 
 // Mock os module
-vi.mock("os", () => ({
-	homedir: vi.fn(() => "/mock/home"),
+mock.module("os", () => ({
+	homedir: mock(() => "/mock/home"),
 }));
 
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { AbortError, ClaudeRunner } from "../src/ClaudeRunner";
 import type { ClaudeRunnerConfig, SDKMessage } from "../src/types";
@@ -38,10 +46,10 @@ describe("ClaudeRunner", () => {
 
 	beforeEach(() => {
 		// Reset all mocks
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Set up mock query function
-		mockQuery = vi.mocked(query);
+		mockQuery = query as any;
 
 		// Create runner instance
 		runner = new ClaudeRunner(defaultConfig);
@@ -62,7 +70,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should register onMessage callback if provided", () => {
-			const onMessage = vi.fn();
+			const onMessage = mock();
 			const runnerWithCallback = new ClaudeRunner({
 				...defaultConfig,
 				onMessage,
@@ -73,7 +81,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should register onError callback if provided", () => {
-			const onError = vi.fn();
+			const onError = mock();
 			const runnerWithCallback = new ClaudeRunner({
 				...defaultConfig,
 				onError,
@@ -85,7 +93,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should register onComplete callback if provided", () => {
-			const onComplete = vi.fn();
+			const onComplete = mock();
 			const runnerWithCallback = new ClaudeRunner({
 				...defaultConfig,
 				onComplete,
@@ -228,7 +236,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should emit message events for each SDK message", async () => {
-			const messageHandler = vi.fn();
+			const messageHandler = mock();
 			runner.on("message", messageHandler);
 
 			const mockMessages: SDKMessage[] = [
@@ -260,7 +268,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should emit complete event with all messages", async () => {
-			const completeHandler = vi.fn();
+			const completeHandler = mock();
 			runner.on("complete", completeHandler);
 
 			const mockMessages: SDKMessage[] = [
@@ -361,8 +369,8 @@ describe("ClaudeRunner", () => {
 
 	describe("Message Processing", () => {
 		it("should emit text events for assistant text content", async () => {
-			const textHandler = vi.fn();
-			const assistantHandler = vi.fn();
+			const textHandler = mock();
+			const assistantHandler = mock();
 
 			runner.on("text", textHandler);
 			runner.on("assistant", assistantHandler);
@@ -399,7 +407,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should emit tool-use events for tool calls", async () => {
-			const toolUseHandler = vi.fn();
+			const toolUseHandler = mock();
 			runner.on("tool-use", toolUseHandler);
 
 			const mockMessages: SDKMessage[] = [
@@ -436,7 +444,7 @@ describe("ClaudeRunner", () => {
 
 	describe("Error Handling", () => {
 		it("should emit error event on query failure", async () => {
-			const errorHandler = vi.fn();
+			const errorHandler = mock();
 			runner.on("error", errorHandler);
 
 			const testError = new Error("Query failed");
@@ -453,7 +461,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should handle AbortError gracefully", async () => {
-			const errorHandler = vi.fn();
+			const errorHandler = mock();
 			runner.on("error", errorHandler);
 
 			// biome-ignore lint/correctness/useYield: This is just mocked for testing
@@ -468,7 +476,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should handle SIGTERM (exit code 143) gracefully", async () => {
-			const errorHandler = vi.fn();
+			const errorHandler = mock();
 			runner.on("error", errorHandler);
 
 			// biome-ignore lint/correctness/useYield: This is just mocked for testing
@@ -509,7 +517,7 @@ describe("ClaudeRunner", () => {
 
 	describe("Session ID Extraction", () => {
 		it("should extract session ID from first Claude message", async () => {
-			const messageHandler = vi.fn();
+			const messageHandler = mock();
 			runner.on("message", messageHandler);
 
 			mockQuery.mockImplementation(async function* () {
@@ -570,7 +578,7 @@ describe("ClaudeRunner", () => {
 		});
 
 		it("should only extract session ID once from first message that has it", async () => {
-			const logSpy = vi.spyOn(console, "log");
+			const logSpy = spyOn(console, "log");
 
 			mockQuery.mockImplementation(async function* () {
 				yield {
@@ -731,7 +739,7 @@ describe("ClaudeRunner", () => {
 				}
 			});
 
-			const messageHandler = vi.fn();
+			const messageHandler = mock();
 			runner.on("message", messageHandler);
 
 			await runner.start("test");
@@ -769,7 +777,7 @@ describe("ClaudeRunner", () => {
 				}
 			});
 
-			const messageHandler = vi.fn();
+			const messageHandler = mock();
 			runner.on("message", messageHandler);
 
 			await runner.start("test");
@@ -826,7 +834,7 @@ describe("ClaudeRunner", () => {
 				}
 			});
 
-			const messageHandler = vi.fn();
+			const messageHandler = mock();
 			runner.on("message", messageHandler);
 
 			await runner.start("test");

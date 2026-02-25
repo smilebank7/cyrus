@@ -1,9 +1,9 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type {
 	SDKAssistantMessage,
 	SDKStatusMessage,
 	SDKSystemMessage,
 } from "sylas-claude-runner";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager";
 import type { IActivitySink } from "../src/sinks/IActivitySink";
 
@@ -16,18 +16,18 @@ import type { IActivitySink } from "../src/sinks/IActivitySink";
 describe("AgentSessionManager - GitHub Session", () => {
 	let manager: AgentSessionManager;
 	let mockActivitySink: IActivitySink;
-	let postActivitySpy: ReturnType<typeof vi.fn>;
+	let postActivitySpy: ReturnType<typeof mock>;
 	const sessionId = "github-session-123";
 	const issueId = "issue-456";
 
 	beforeEach(() => {
 		mockActivitySink = {
 			id: "test-workspace",
-			postActivity: vi.fn().mockResolvedValue({ activityId: "activity-123" }),
-			createAgentSession: vi.fn().mockResolvedValue("session-123"),
+			postActivity: mock().mockResolvedValue({ activityId: "activity-123" }),
+			createAgentSession: mock().mockResolvedValue("session-123"),
 		};
 
-		postActivitySpy = mockActivitySink.postActivity as ReturnType<typeof vi.fn>;
+		postActivitySpy = mockActivitySink.postActivity as ReturnType<typeof mock>;
 
 		manager = new AgentSessionManager(mockActivitySink);
 	});

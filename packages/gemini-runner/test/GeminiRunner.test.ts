@@ -1,7 +1,6 @@
 import type { ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { StreamingPrompt } from "sylas-core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GeminiRunner } from "../src/GeminiRunner.js";
 import type {
 	GeminiInitEvent,
@@ -13,35 +12,39 @@ import type {
 } from "../src/types.js";
 
 // Mock child_process spawn
-vi.mock("node:child_process", () => ({
-	spawn: vi.fn(),
+mock.module("node:child_process", () => ({
+	...require("node:child_process"),
+	spawn: mock(),
 }));
 
 // Mock readline
-vi.mock("node:readline", () => ({
-	createInterface: vi.fn(),
+mock.module("node:readline", () => ({
+	...require("node:readline"),
+	createInterface: mock(),
 }));
 
 // Mock fs for log file creation
-vi.mock("node:fs/promises", () => ({
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	appendFile: vi.fn(),
+mock.module("node:fs/promises", () => ({
+	...require("node:fs/promises"),
+	writeFile: mock(),
+	mkdir: mock(),
+	appendFile: mock(),
 }));
 
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 
-const mockSpawn = vi.mocked(spawn);
-const mockCreateInterface = vi.mocked(createInterface);
+const mockSpawn = spawn as any;
+const mockCreateInterface = createInterface as any;
 
 // Helper class to emulate Gemini CLI process
 class ProcessEmulator extends EventEmitter {
 	stdout = new EventEmitter() as NodeJS.ReadableStream & EventEmitter;
 	stderr = new EventEmitter() as NodeJS.ReadableStream & EventEmitter;
 	stdin = {
-		write: vi.fn(),
-		end: vi.fn(),
+		write: mock(),
+		end: mock(),
 	};
 
 	private readlineHandlers: Map<string, ((line: string) => void)[]> = new Map();
@@ -147,7 +150,7 @@ describe("GeminiRunner", () => {
 	};
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 		processEmulator = new ProcessEmulator();
 		mockSpawn.mockReturnValue(processEmulator as unknown as ChildProcess);
 		runner = new GeminiRunner(defaultConfig);
@@ -399,7 +402,7 @@ describe("GeminiRunner", () => {
 		});
 
 		it("should handle result events with errors", async () => {
-			const errorHandler = vi.fn();
+			const errorHandler = mock();
 			runner.on("error", errorHandler);
 
 			const promise = runner.start("Test");
@@ -432,7 +435,7 @@ describe("GeminiRunner", () => {
 
 	describe("Event Emission", () => {
 		it("should emit 'message' event for each SDK message", async () => {
-			const messageHandler = vi.fn();
+			const messageHandler = mock();
 			runner.on("message", messageHandler);
 
 			const promise = runner.start("Test");
@@ -456,7 +459,7 @@ describe("GeminiRunner", () => {
 		});
 
 		it("should emit 'complete' event on successful completion", async () => {
-			const completeHandler = vi.fn();
+			const completeHandler = mock();
 			runner.on("complete", completeHandler);
 
 			const promise = runner.start("Test");
@@ -481,7 +484,7 @@ describe("GeminiRunner", () => {
 		// The error handling behavior is still tested by other tests like
 		// "should handle process spawn errors" which use a different approach.
 		it.skip("should emit 'error' event on process error", async () => {
-			const errorHandler = vi.fn();
+			const errorHandler = mock();
 			runner.on("error", errorHandler);
 
 			const promise = runner.start("Test");
@@ -502,7 +505,7 @@ describe("GeminiRunner", () => {
 		});
 
 		it("should emit 'streamEvent' for raw Gemini events", async () => {
-			const streamEventHandler = vi.fn();
+			const streamEventHandler = mock();
 			runner.on("streamEvent", streamEventHandler);
 
 			const promise = runner.start("Test");

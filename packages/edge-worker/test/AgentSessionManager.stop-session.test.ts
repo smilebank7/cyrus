@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { AgentSessionStatus } from "sylas-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager";
 import type { IActivitySink } from "../src/sinks/IActivitySink";
 
@@ -14,21 +14,19 @@ describe("AgentSessionManager stop-session behavior", () => {
 	beforeEach(() => {
 		mockActivitySink = {
 			id: "test-workspace",
-			postActivity: vi.fn().mockResolvedValue({ activityId: "activity-1" }),
-			createAgentSession: vi.fn().mockResolvedValue("session-1"),
+			postActivity: mock().mockResolvedValue({ activityId: "activity-1" }),
+			createAgentSession: mock().mockResolvedValue("session-1"),
 		};
 
-		postActivitySpy = vi.spyOn(mockActivitySink, "postActivity");
+		postActivitySpy = spyOn(mockActivitySink, "postActivity");
 
 		mockProcedureAnalyzer = {
-			getNextSubroutine: vi.fn().mockReturnValue({ name: "verifications" }),
-			getCurrentSubroutine: vi
-				.fn()
-				.mockReturnValue({ name: "coding-activity" }),
-			advanceToNextSubroutine: vi.fn(),
-			getLastSubroutineResult: vi
-				.fn()
-				.mockReturnValue("Recovered previous result"),
+			getNextSubroutine: mock().mockReturnValue({ name: "verifications" }),
+			getCurrentSubroutine: mock().mockReturnValue({ name: "coding-activity" }),
+			advanceToNextSubroutine: mock(),
+			getLastSubroutineResult: mock().mockReturnValue(
+				"Recovered previous result",
+			),
 		};
 
 		manager = new AgentSessionManager(
@@ -56,7 +54,7 @@ describe("AgentSessionManager stop-session behavior", () => {
 	});
 
 	it("does not advance procedure when a session stop is requested", async () => {
-		const subroutineCompleteSpy = vi.fn();
+		const subroutineCompleteSpy = mock();
 		manager.on("subroutineComplete", subroutineCompleteSpy);
 
 		manager.requestSessionStop(sessionId);
@@ -94,7 +92,7 @@ describe("AgentSessionManager stop-session behavior", () => {
 	});
 
 	it("does not recover-and-advance for non max-turn execution errors", async () => {
-		const subroutineCompleteSpy = vi.fn();
+		const subroutineCompleteSpy = mock();
 		manager.on("subroutineComplete", subroutineCompleteSpy);
 
 		await manager.completeSession(sessionId, {

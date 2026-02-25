@@ -2,12 +2,12 @@
  * Unit tests for LinearActivitySink
  */
 
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import {
 	type AgentActivityContent,
 	AgentActivitySignal,
 	type IIssueTrackerService,
 } from "sylas-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActivityPostOptions } from "../src/sinks/IActivitySink.js";
 import { LinearActivitySink } from "../src/sinks/LinearActivitySink.js";
 
@@ -22,8 +22,8 @@ describe("LinearActivitySink", () => {
 	beforeEach(() => {
 		// Create a minimal mock IssueTrackerService
 		mockIssueTracker = {
-			createAgentActivity: vi.fn(),
-			createAgentSessionOnIssue: vi.fn(),
+			createAgentActivity: mock(),
+			createAgentSessionOnIssue: mock(),
 		} as unknown as IIssueTrackerService;
 
 		sink = new LinearActivitySink(mockIssueTracker, mockWorkspaceId);
@@ -47,7 +47,7 @@ describe("LinearActivitySink", () => {
 				body: "Analyzing the codebase...",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);
@@ -69,7 +69,7 @@ describe("LinearActivitySink", () => {
 				result: "File contents...",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-2" }),
 			} as any);
@@ -89,7 +89,7 @@ describe("LinearActivitySink", () => {
 				body: "I've completed the task successfully.",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-3" }),
 			} as any);
@@ -105,7 +105,7 @@ describe("LinearActivitySink", () => {
 				body: "Failed to read file: Permission denied",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-4" }),
 			} as any);
@@ -121,7 +121,7 @@ describe("LinearActivitySink", () => {
 				body: "Which API endpoint should I use?",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-5" }),
 			} as any);
@@ -138,7 +138,7 @@ describe("LinearActivitySink", () => {
 			};
 
 			const error = new Error("Network error");
-			vi.mocked(mockIssueTracker.createAgentActivity).mockRejectedValue(error);
+			(mockIssueTracker.createAgentActivity as any).mockRejectedValue(error);
 
 			await expect(sink.postActivity(mockSessionId, activity)).rejects.toThrow(
 				"Network error",
@@ -151,7 +151,7 @@ describe("LinearActivitySink", () => {
 				body: "Test",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: undefined,
 			} as any);
@@ -167,7 +167,7 @@ describe("LinearActivitySink", () => {
 				body: "Test",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: false,
 			} as any);
 
@@ -182,7 +182,7 @@ describe("LinearActivitySink", () => {
 				body: "Test",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);
@@ -199,7 +199,7 @@ describe("LinearActivitySink", () => {
 			};
 			const options: ActivityPostOptions = { ephemeral: true };
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-eph" }),
 			} as any);
@@ -223,7 +223,7 @@ describe("LinearActivitySink", () => {
 				signalMetadata: { url: "https://example.com/approve" },
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-sig" }),
 			} as any);
@@ -244,7 +244,7 @@ describe("LinearActivitySink", () => {
 				body: "Choose a repo",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-sel" }),
 			} as any);
@@ -264,7 +264,7 @@ describe("LinearActivitySink", () => {
 				body: "Stopping",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-stop" }),
 			} as any);
@@ -284,7 +284,7 @@ describe("LinearActivitySink", () => {
 				body: "Continuing",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-cont" }),
 			} as any);
@@ -307,7 +307,7 @@ describe("LinearActivitySink", () => {
 			};
 			const metadata = { options: ["repo-a", "repo-b"], defaultIndex: 0 };
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-meta" }),
 			} as any);
@@ -331,7 +331,7 @@ describe("LinearActivitySink", () => {
 				body: "No ephemeral",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-no-eph" }),
 			} as any);
@@ -348,7 +348,7 @@ describe("LinearActivitySink", () => {
 	describe("createAgentSession()", () => {
 		it("should create a session and return session ID", async () => {
 			const expectedSessionId = "new-session-123";
-			vi.mocked(mockIssueTracker.createAgentSessionOnIssue).mockResolvedValue({
+			(mockIssueTracker.createAgentSessionOnIssue as any).mockResolvedValue({
 				success: true,
 				agentSession: Promise.resolve({ id: expectedSessionId }),
 			} as any);
@@ -362,7 +362,7 @@ describe("LinearActivitySink", () => {
 		});
 
 		it("should throw when result.success is false", async () => {
-			vi.mocked(mockIssueTracker.createAgentSessionOnIssue).mockResolvedValue({
+			(mockIssueTracker.createAgentSessionOnIssue as any).mockResolvedValue({
 				success: false,
 				agentSession: Promise.resolve({ id: "should-not-reach" }),
 			} as any);
@@ -374,7 +374,7 @@ describe("LinearActivitySink", () => {
 
 		it("should handle session creation errors", async () => {
 			const error = new Error("Failed to create session");
-			vi.mocked(mockIssueTracker.createAgentSessionOnIssue).mockRejectedValue(
+			(mockIssueTracker.createAgentSessionOnIssue as any).mockRejectedValue(
 				error,
 			);
 
@@ -387,7 +387,7 @@ describe("LinearActivitySink", () => {
 			const expectedSessionId = "new-session-456";
 			const agentSessionPromise = Promise.resolve({ id: expectedSessionId });
 
-			vi.mocked(mockIssueTracker.createAgentSessionOnIssue).mockResolvedValue({
+			(mockIssueTracker.createAgentSessionOnIssue as any).mockResolvedValue({
 				success: true,
 				agentSession: agentSessionPromise,
 			} as any);
@@ -398,7 +398,7 @@ describe("LinearActivitySink", () => {
 		});
 
 		it("should call createAgentSessionOnIssue exactly once", async () => {
-			vi.mocked(mockIssueTracker.createAgentSessionOnIssue).mockResolvedValue({
+			(mockIssueTracker.createAgentSessionOnIssue as any).mockResolvedValue({
 				success: true,
 				agentSession: Promise.resolve({ id: "session-123" }),
 			} as any);
@@ -413,7 +413,7 @@ describe("LinearActivitySink", () => {
 
 	describe("Multiple Operations", () => {
 		it("should handle multiple activity posts to the same session", async () => {
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);
@@ -436,7 +436,7 @@ describe("LinearActivitySink", () => {
 		});
 
 		it("should handle creating multiple sessions", async () => {
-			vi.mocked(mockIssueTracker.createAgentSessionOnIssue).mockResolvedValue({
+			(mockIssueTracker.createAgentSessionOnIssue as any).mockResolvedValue({
 				success: true,
 				agentSession: Promise.resolve({ id: "session-1" }),
 			} as any);
@@ -472,7 +472,7 @@ describe("LinearActivitySink", () => {
 		it("should maintain consistent ID throughout lifecycle", async () => {
 			const initialId = sink.id;
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);
@@ -493,7 +493,7 @@ describe("LinearActivitySink", () => {
 				body: "",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);
@@ -512,7 +512,7 @@ describe("LinearActivitySink", () => {
 				action: "test",
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);
@@ -532,7 +532,7 @@ describe("LinearActivitySink", () => {
 				body: longBody,
 			};
 
-			vi.mocked(mockIssueTracker.createAgentActivity).mockResolvedValue({
+			(mockIssueTracker.createAgentActivity as any).mockResolvedValue({
 				success: true,
 				agentActivity: Promise.resolve({ id: "activity-1" }),
 			} as any);

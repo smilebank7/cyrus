@@ -1,50 +1,53 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// Use vi.hoisted to create mock functions that can be used in vi.mock
-const mocks = vi.hoisted(() => ({
-	mockExecSync: vi.fn(),
-	mockRandomUUID: vi.fn(),
-	mockExistsSync: vi.fn(),
-	mockReadFileSync: vi.fn(),
-	mockWriteFileSync: vi.fn(),
-	mockQuestion: vi.fn(),
-	mockClose: vi.fn(),
-}));
+const mocks = {
+	mockExecSync: mock(),
+	mockRandomUUID: mock(),
+	mockExistsSync: mock(),
+	mockReadFileSync: mock(),
+	mockWriteFileSync: mock(),
+	mockQuestion: mock(),
+	mockClose: mock(),
+};
 
 // Mock modules
-vi.mock("node:child_process", () => ({
+mock.module("node:child_process", () => ({
+	...require("node:child_process"),
 	execSync: mocks.mockExecSync,
 }));
 
-vi.mock("node:crypto", () => ({
+mock.module("node:crypto", () => ({
+	...require("node:crypto"),
 	randomUUID: mocks.mockRandomUUID,
 }));
 
-vi.mock("node:fs", () => ({
+mock.module("node:fs", () => ({
+	...require("node:fs"),
 	existsSync: mocks.mockExistsSync,
 	readFileSync: mocks.mockReadFileSync,
 	writeFileSync: mocks.mockWriteFileSync,
 }));
 
-vi.mock("node:path", () => ({
-	resolve: vi.fn((...parts) => parts.join("/")),
+mock.module("node:path", () => ({
+	...require("node:path"),
+	resolve: mock((...parts) => parts.join("/")),
 }));
 
-vi.mock("node:readline", () => ({
-	createInterface: vi.fn(() => ({
+mock.module("node:readline", () => ({
+	...require("node:readline"),
+	createInterface: mock(() => ({
 		question: mocks.mockQuestion,
 		close: mocks.mockClose,
 	})),
 }));
 
 // Mock process.exit
-const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
+const mockExit = spyOn(process, "exit").mockImplementation(() => {
 	throw new Error("process.exit called");
 });
 
 // Mock console methods
-const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
+const mockConsoleLog = spyOn(console, "log").mockImplementation(() => {});
 
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 // Import after mocks
 import { SelfAddRepoCommand } from "./SelfAddRepoCommand.js";
 
@@ -52,16 +55,16 @@ import { SelfAddRepoCommand } from "./SelfAddRepoCommand.js";
 const createMockApp = () => ({
 	sylasHome: "/home/user/.sylas",
 	config: {
-		exists: vi.fn().mockReturnValue(true),
-		load: vi.fn(),
-		update: vi.fn(),
+		exists: mock().mockReturnValue(true),
+		load: mock(),
+		update: mock(),
 	},
 	logger: {
-		info: vi.fn(),
-		error: vi.fn(),
-		warn: vi.fn(),
-		success: vi.fn(),
-		divider: vi.fn(),
+		info: mock(),
+		error: mock(),
+		warn: mock(),
+		success: mock(),
+		divider: mock(),
 	},
 });
 
@@ -70,7 +73,16 @@ describe("SelfAddRepoCommand", () => {
 	let command: SelfAddRepoCommand;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		// Clear all mock call history (NOT mock.restore() which destroys mock.module registrations)
+		mocks.mockExecSync.mockClear();
+		mocks.mockRandomUUID.mockClear();
+		mocks.mockExistsSync.mockClear();
+		mocks.mockReadFileSync.mockClear();
+		mocks.mockWriteFileSync.mockClear();
+		mocks.mockQuestion.mockClear();
+		mocks.mockClose.mockClear();
+		mockExit.mockClear();
+		mockConsoleLog.mockClear();
 		mockApp = createMockApp();
 		command = new SelfAddRepoCommand(mockApp as any);
 		mocks.mockRandomUUID.mockReturnValue("generated-uuid-123");

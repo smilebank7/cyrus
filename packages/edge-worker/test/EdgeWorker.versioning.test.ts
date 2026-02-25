@@ -1,48 +1,57 @@
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import { readFile } from "node:fs/promises";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import type { EdgeWorkerConfig } from "../src/types.js";
 
 // Mock fs/promises
-vi.mock("fs/promises", () => ({
-	readFile: vi.fn(),
-	writeFile: vi.fn(),
-	mkdir: vi.fn(),
-	rename: vi.fn(),
+mock.module("fs/promises", () => ({
+	...require("node:fs/promises"),
+	readFile: mock(),
+	writeFile: mock(),
+	mkdir: mock(),
+	rename: mock(),
 }));
 
 // Mock other dependencies
-vi.mock("sylas-claude-runner");
-vi.mock("sylas-codex-runner");
-vi.mock("@linear/sdk", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@linear/sdk")>();
+mock.module("sylas-claude-runner", () => ({}));
+mock.module("sylas-codex-runner", () => ({}));
+mock.module("@linear/sdk", () => {
+	const actual = require("@linear/sdk");
 	return {
 		...actual,
-		LinearClient: vi.fn().mockImplementation(() => ({
-			issue: vi.fn(),
+		LinearClient: mock().mockImplementation(() => ({
+			issue: mock(),
 			viewer: Promise.resolve({
 				organization: Promise.resolve({ id: "ws-123", name: "Test" }),
 			}),
 			client: {
-				request: vi.fn(),
-				setHeader: vi.fn(),
+				request: mock(),
+				setHeader: mock(),
 			},
 		})),
 	};
 });
-vi.mock("../src/SharedApplicationServer.js");
-vi.mock("../src/AgentSessionManager.js");
-vi.mock("sylas-core", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("sylas-core")>();
+mock.module("../src/SharedApplicationServer.js", () => ({}));
+mock.module("../src/AgentSessionManager.js", () => ({}));
+mock.module("sylas-core", () => {
+	const actual = require("sylas-core");
 	return {
 		...actual,
-		PersistenceManager: vi.fn().mockImplementation(() => ({
-			loadEdgeWorkerState: vi.fn().mockResolvedValue(null),
-			saveEdgeWorkerState: vi.fn().mockResolvedValue(undefined),
+		PersistenceManager: mock().mockImplementation(() => ({
+			loadEdgeWorkerState: mock().mockResolvedValue(null),
+			saveEdgeWorkerState: mock().mockResolvedValue(undefined),
 		})),
 	};
 });
-vi.mock("file-type");
+mock.module("file-type", () => ({}));
 
 describe("EdgeWorker - Version Tag Extraction", () => {
 	let edgeWorker: EdgeWorker;
@@ -50,12 +59,12 @@ describe("EdgeWorker - Version Tag Extraction", () => {
 
 	beforeEach(() => {
 		// Clear all mocks
-		vi.clearAllMocks();
+		mock.restore();
 
 		// Mock console methods
-		vi.spyOn(console, "log").mockImplementation(() => {});
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
+		spyOn(console, "log").mockImplementation(() => {});
+		spyOn(console, "error").mockImplementation(() => {});
+		spyOn(console, "warn").mockImplementation(() => {});
 
 		mockConfig = {
 			proxyUrl: "http://localhost:3000",
@@ -82,7 +91,7 @@ describe("EdgeWorker - Version Tag Extraction", () => {
 
 	afterEach(() => {
 		// Only clear mocks, don't restore them (restoreAllMocks would undo module mocks)
-		vi.clearAllMocks();
+		mock.restore();
 	});
 
 	it("should extract version from prompt template", async () => {
@@ -96,7 +105,7 @@ Issue: {{issue_identifier}} - {{issue_title}}
 ## Description
 {{issue_description}}`;
 
-		vi.mocked(readFile).mockResolvedValue(templateWithVersion);
+		(readFile as any).mockResolvedValue(templateWithVersion);
 
 		// Use reflection to test private method
 		const extractVersionTag = (
@@ -116,7 +125,7 @@ Issue: {{issue_identifier}} - {{issue_title}}
 ## Description
 {{issue_description}}`;
 
-		vi.mocked(readFile).mockResolvedValue(templateWithoutVersion);
+		(readFile as any).mockResolvedValue(templateWithoutVersion);
 
 		// Use reflection to test private method
 		const extractVersionTag = (
@@ -134,7 +143,7 @@ Issue: {{issue_identifier}} - {{issue_title}}
 
 Repository: {{repository_name}}`;
 
-		vi.mocked(readFile).mockResolvedValue(templateWithVersion);
+		(readFile as any).mockResolvedValue(templateWithVersion);
 
 		// Set log level to DEBUG so version logging (a debug message) is visible
 		const originalLogLevel = process.env.SYLAS_LOG_LEVEL;
@@ -144,7 +153,7 @@ Repository: {{repository_name}}`;
 		process.env.SYLAS_LOG_LEVEL = originalLogLevel;
 
 		// Spy on console.log to check for version logging
-		const logSpy = vi.spyOn(console, "log");
+		const logSpy = spyOn(console, "log");
 
 		// Use reflection to test the buildIssueContextPrompt method
 		const buildIssueContextPrompt = (
@@ -175,9 +184,9 @@ Repository: {{repository_name}}`;
 
 Repository: {{repository_name}}`;
 
-		vi.mocked(readFile).mockResolvedValue(templateWithoutVersion);
+		(readFile as any).mockResolvedValue(templateWithoutVersion);
 
-		const logSpy = vi.spyOn(console, "log");
+		const logSpy = spyOn(console, "log");
 
 		// Use reflection to test the buildIssueContextPrompt method
 		const buildIssueContextPrompt = (

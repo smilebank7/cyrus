@@ -1,5 +1,4 @@
 import fs from "fs-extra";
-import { describe, expect, it } from "vitest";
 
 describe("fs-extra import compatibility", () => {
 	it("should have fs.stat available as a function when using default import", () => {

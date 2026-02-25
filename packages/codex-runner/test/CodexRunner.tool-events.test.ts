@@ -1,5 +1,4 @@
 import type { SDKAssistantMessage, SDKUserMessage } from "sylas-core";
-import { describe, expect, it } from "vitest";
 import { CodexRunner } from "../src/CodexRunner.js";
 import type { CodexJsonEvent } from "../src/types.js";
 

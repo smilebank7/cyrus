@@ -29,11 +29,16 @@ else
 fi
 
 # --- OpenCode config (oh-my-opencode plugin) ---------------------------------
-
+# Resolve oh-my-opencode plugin path (bun global installs to ~/.bun/install/global/node_modules/)
+OMO_PLUGIN=$(find /root/.bun -path '*/oh-my-opencode/dist/index.js' 2>/dev/null | head -1)
+if [ -z "$OMO_PLUGIN" ]; then
+  # Fallback to npm-style global path
+  OMO_PLUGIN="/usr/local/lib/node_modules/oh-my-opencode/dist/index.js"
+fi
 mkdir -p "$OPENCODE_CONFIG"
-cat > "$OPENCODE_CONFIG/opencode.json" << 'OCJSON'
+cat > "$OPENCODE_CONFIG/opencode.json" << OCJSON
 {
-  "plugin": ["file:///usr/local/lib/node_modules/oh-my-opencode/dist/index.js"]
+  "plugin": ["file://${OMO_PLUGIN}"]
 }
 OCJSON
 

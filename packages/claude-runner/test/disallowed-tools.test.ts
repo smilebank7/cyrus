@@ -1,35 +1,43 @@
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import * as claudeCode from "@anthropic-ai/claude-agent-sdk";
 import { createLogger, LogLevel } from "sylas-core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClaudeRunner } from "../src/ClaudeRunner";
 import type { ClaudeRunnerConfig } from "../src/types";
 
 // Mock the query function from @anthropic-ai/claude-agent-sdk
-vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
-	query: vi.fn(),
+mock.module("@anthropic-ai/claude-agent-sdk", () => ({
+	query: mock(),
 }));
 
 // Mock file system with all required methods
-vi.mock("fs", () => ({
-	readFileSync: vi.fn(),
-	existsSync: vi.fn(() => true),
-	mkdirSync: vi.fn(),
-	createWriteStream: vi.fn(() => ({
-		write: vi.fn(),
-		end: vi.fn(),
-		on: vi.fn(),
+mock.module("fs", () => ({
+	readFileSync: mock(),
+	existsSync: mock(() => true),
+	mkdirSync: mock(),
+	createWriteStream: mock(() => ({
+		write: mock(),
+		end: mock(),
+		on: mock(),
 	})),
-	statSync: vi.fn(() => ({
-		isDirectory: vi.fn(() => true),
+	statSync: mock(() => ({
+		isDirectory: mock(() => true),
 	})),
 }));
 
 describe("ClaudeRunner - disallowedTools", () => {
-	const queryMock = vi.mocked(claudeCode.query);
+	const queryMock = claudeCode.query as any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-
+		mock.restore();
+		queryMock.mockClear?.();
 		// Mock the query to return an async generator
 		queryMock.mockImplementation(async function* () {
 			// Empty generator for testing
@@ -37,7 +45,7 @@ describe("ClaudeRunner - disallowedTools", () => {
 	});
 
 	afterEach(() => {
-		vi.clearAllMocks();
+		mock.restore();
 	});
 
 	it("should pass disallowedTools to Claude Code when configured", async () => {
@@ -141,7 +149,7 @@ describe("ClaudeRunner - disallowedTools", () => {
 	});
 
 	it("should log disallowedTools when configured", async () => {
-		const consoleSpy = vi.spyOn(console, "log");
+		const consoleSpy = spyOn(console, "log");
 
 		const config: ClaudeRunnerConfig = {
 			workingDirectory: "/test",
