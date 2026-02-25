@@ -39,47 +39,51 @@ pnpm build  # Builds all packages to ensure dependencies are resolved
 ```
 
 ### 3. Publish packages in dependency order
-
-**IMPORTANT**: Publish in this exact order to avoid dependency resolution issues:
-
+**IMPORTANT**: Publish in this exact order (topological sort by workspace deps):
 ```bash
-# 1. Packages with no internal dependencies
-cd packages/cloudflare-tunnel-client && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
-
-cd packages/claude-runner && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
-
-# 2. Core package (depends on claude-runner)
+# Tier 1: No internal dependencies
 cd packages/core && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
+cd ../.. && pnpm install
+cd packages/cloudflare-tunnel-client && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
 
-# 3. Simple agent runner (depends on claude-runner)
-cd packages/simple-agent-runner && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
+cd packages/mcp-tools && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
 
-# 4. Packages that depend on core
-cd packages/linear-event-transport && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
+# Tier 2: Depends on core only
+cd packages/claude-runner && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
 
+cd packages/codex-runner && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
+
+cd packages/cursor-runner && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
 cd packages/config-updater && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
+cd ../.. && pnpm install
+cd packages/linear-event-transport && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
 
-# 5. Gemini runner (depends on claude-runner, core, simple-agent-runner)
+cd packages/github-event-transport && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
+
+cd packages/opencode-runner && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
+
+cd packages/slack-event-transport && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
+
+# Tier 3: Depends on claude-runner + core
+cd packages/simple-agent-runner && pnpm publish --access public --no-git-checks
+cd ../.. && pnpm install
+
+# Tier 4: Depends on claude-runner + core + simple-agent-runner
 cd packages/gemini-runner && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
+cd ../.. && pnpm install
 
-# 6. Edge worker (depends on all packages above)
+# Tier 5: Depends on all packages above
 cd packages/edge-worker && pnpm publish --access public --no-git-checks
-cd ../..
-pnpm install  # Update lockfile
+cd ../.. && pnpm install
 ```
 
 ### 4. Publish the CLI

@@ -1,6 +1,6 @@
 {
 	"name": "sylas-codex-runner",
-	"version": "0.2.19",
+	"version": "0.2.21",
 	"description": "Codex CLI process wrapper for Sylas",
 	"type": "module",
 	"main": "dist/index.js",
