@@ -23,8 +23,8 @@ mock.module("fastify", () => ({
 	default: mocks.mockFastify,
 }));
 
-mock.module("open", () => ({
-	default: mocks.mockOpen,
+mock.module("../utils/openUrl.js", () => ({
+	openUrl: mocks.mockOpen,
 }));
 
 // Mock LinearClient

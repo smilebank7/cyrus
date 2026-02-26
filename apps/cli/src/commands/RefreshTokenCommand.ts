@@ -1,6 +1,6 @@
 import http from "node:http";
-import open from "open";
 import { CLIPrompts } from "../ui/CLIPrompts.js";
+import { openUrl } from "../utils/openUrl.js";
 import { BaseCommand } from "./ICommand.js";
 
 /**
@@ -143,7 +143,7 @@ export class RefreshTokenCommand extends BaseCommand {
 				});
 			});
 
-			await open(oauthUrl);
+			await openUrl(oauthUrl);
 
 			// Wait for the token with timeout
 			const startTime = Date.now();

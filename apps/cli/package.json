@@ -2,15 +2,15 @@
 	"name": "sylas-ai",
 	"version": "0.2.21",
 	"description": "AI-powered Linear issue automation using Claude",
-	"main": "dist/src/app.js",
-	"types": "dist/src/app.d.ts",
+	"main": "dist/app.js",
+	"types": "dist/app.d.ts",
 	"bin": {
-		"sylas": "./dist/src/app.js"
+		"sylas": "./dist/app.js"
 	},
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
-		"start": "node dist/src/app.js",
+		"start": "node dist/app.js",
 		"dev": "tsc --watch",
 		"test": "bun test",
 		"test:run": "bun test",
@@ -55,7 +55,6 @@
 		"file-type": "^21.0.0",
 		"fs-extra": "^11.3.0",
 		"node-fetch": "^2.7.0",
-		"open": "^10.0.0",
 		"zod": "^4.3.5"
 	},
 	"devDependencies": {

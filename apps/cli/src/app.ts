@@ -18,8 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read package.json to get the actual version
-// When compiled, this is in dist/src/, so we need to go up two levels
-const packageJsonPath = resolve(__dirname, "..", "..", "package.json");
+// When compiled, this is in dist/, so we need to go up one level
+const packageJsonPath = resolve(__dirname, "..", "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
 // Setup Commander program

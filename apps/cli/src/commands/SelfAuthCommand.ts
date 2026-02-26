@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { LinearClient } from "@linear/sdk";
 import Fastify, { type FastifyInstance } from "fastify";
-import open from "open";
 import { DEFAULT_CONFIG_FILENAME, type EdgeConfig } from "sylas-core";
+import { openUrl } from "../utils/openUrl.js";
 import { BaseCommand } from "./ICommand.js";
 
 /**
@@ -168,7 +168,7 @@ export class SelfAuthCommand extends BaseCommand {
 					console.log(oauthUrl);
 					console.log();
 
-					open(oauthUrl).catch(() => {
+					openUrl(oauthUrl).catch(() => {
 						console.log("Could not open browser automatically.");
 					});
 				})
