@@ -1,6 +1,6 @@
 {
 	"name": "sylas-opencode-runner",
-	"version": "0.2.22",
+	"version": "0.2.23",
 	"description": "OpenCode SDK integration and management for Sylas",
 	"type": "module",
 	"main": "dist/index.js",

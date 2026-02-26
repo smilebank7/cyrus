@@ -1,6 +1,6 @@
 {
 	"name": "sylas-config-updater",
-	"version": "0.2.22",
+	"version": "0.2.23",
 	"description": "Configuration update handlers for Sylas agent",
 	"type": "module",
 	"main": "./dist/index.js",

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## [0.2.23] - 2026-02-26
+
+### Changed
+- **Unified CLI onboarding** — `sylas start` now guides first-time users through interactive setup (Linear auth, repository config, environment variables) when no repositories are configured. ([LJH-113](https://linear.app/leejhin/issue/LJH-113/), [#7](https://github.com/smilebank7/sylas/pull/7))
+- **Full-delegation mode only** — Removed the procedure/subroutine system. Sylas now runs a single AI session per issue with full autonomy, simplifying the execution model. ([LJH-112](https://linear.app/leejhin/issue/LJH-112/), [#7](https://github.com/smilebank7/sylas/pull/7))
+- **Runners consolidated to OpenCode + Claude** — Gemini, Cursor, and Codex runners are temporarily disabled and fall back to OpenCode. Only `omo`/`opencode` and `omc`/`claude` runner labels are active. ([LJH-82](https://linear.app/leejhin/issue/LJH-82/), [LJH-83](https://linear.app/leejhin/issue/LJH-83/), [LJH-84](https://linear.app/leejhin/issue/LJH-84/), [#7](https://github.com/smilebank7/sylas/pull/7))
 ## [0.2.22] - 2026-02-26
  ### Changed
  Migrated from pnpm to Bun as the package manager and from vitest to bun:test as the test runner. All CI, Docker, and dev workflows now use Bun. ([LJH-106](https://linear.app/leejhin/issue/LJH-106/), [#4](https://github.com/smilebank7/sylas/pull/4))

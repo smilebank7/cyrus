@@ -1,6 +1,6 @@
 {
 	"name": "sylas-cloudflare-tunnel-client",
-	"version": "0.2.22",
+	"version": "0.2.23",
 	"description": "Cloudflare tunnel client for receiving config updates and webhooks from sylas-hosted",
 	"type": "module",
 	"main": "./dist/index.js",

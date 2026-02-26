@@ -1,6 +1,6 @@
 {
 	"name": "sylas-mcp-tools",
-	"version": "0.2.22",
+	"version": "0.2.23",
 	"description": "Runner-neutral MCP tool servers for Sylas",
 	"type": "module",
 	"main": "dist/index.js",

@@ -3,7 +3,20 @@
 This changelog documents internal development changes, refactors, tooling updates, and other non-user-facing modifications.
 
 ## [Unreleased]
+## [0.2.23] - 2026-02-26
 
+### CLI Unified Onboarding (LJH-113)
+ Added `OnboardingService` with interactive prompts for first-run setup (Linear auth, repository config, environment variables). `StartCommand` triggers onboarding when `repositories.length === 0`. ([#7](https://github.com/smilebank7/sylas/pull/7))
+ Fixed first-run gate to check `repositories.length === 0` only (not config existence). Fixed `.env` merge logic to preserve existing values with `dotenv.parse()`. ([#7](https://github.com/smilebank7/sylas/pull/7))
+
+### Procedure System Removal (LJH-112)
+ Removed `ProcedureAnalyzer`, `SubroutineAdvancer`, all subroutine prompt files, procedure-specific test files, and related EdgeWorker/AgentSessionManager logic. Only `full-delegation.md` prompt retained. (-8,609 lines) ([#7](https://github.com/smilebank7/sylas/pull/7))
+
+### Runner Consolidation (LJH-82/83/84)
+ Narrowed `RunnerKind` type to `"opencode" | "claude"`. All disabled runner code (gemini, cursor, codex) marked with `// TEMPORARILY DISABLED: runner consolidation v2` markers. ([#7](https://github.com/smilebank7/sylas/pull/7))
+ Updated `RunnerSelectionService`, `EdgeWorker`, `AgentSessionManager`, `ChatSessionHandler` to remove disabled runner logic.
+ Deprecated gemini/codex model fields in `config-schemas.ts` and `config-types.ts`. Deprecated disabled runner session fields in `SylasAgentSession` and `PersistenceManager`.
+ Updated runner-selection tests: disabled runner labels now assert fallback to `opencode`.
 ## [0.2.22] - 2026-02-26
 
 ### Runner Pipeline & CLI Fixes

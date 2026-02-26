@@ -1,6 +1,6 @@
 {
 	"name": "sylas-cursor-runner",
-	"version": "0.2.22",
+	"version": "0.2.23",
 	"description": "Cursor Agent CLI process wrapper for Sylas",
 	"type": "module",
 	"main": "dist/index.js",
