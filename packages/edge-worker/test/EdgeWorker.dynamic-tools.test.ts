@@ -1,40 +1,6 @@
 // Mock dependencies BEFORE imports
 mock.module("sylas-claude-runner", () => ({
 	ClaudeRunner: mock(),
-	getSafeTools: mock(() => [
-		"Read",
-		"Edit",
-		"Task",
-		"WebFetch",
-		"WebSearch",
-		"TodoRead",
-		"TodoWrite",
-		"NotebookRead",
-		"NotebookEdit",
-		"Batch",
-	]),
-	getReadOnlyTools: mock(() => [
-		"Read",
-		"WebFetch",
-		"WebSearch",
-		"TodoRead",
-		"NotebookRead",
-		"Task",
-		"Batch",
-	]),
-	getAllTools: mock(() => [
-		"Read",
-		"Edit",
-		"Task",
-		"WebFetch",
-		"WebSearch",
-		"TodoRead",
-		"TodoWrite",
-		"NotebookRead",
-		"NotebookEdit",
-		"Batch",
-		"Bash",
-	]),
 }));
 mock.module("@linear/sdk", () => ({
 	...require("@linear/sdk"),
@@ -71,11 +37,7 @@ import {
 } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { LinearClient } from "@linear/sdk";
-import {
-	getAllTools,
-	getReadOnlyTools,
-	getSafeTools,
-} from "sylas-claude-runner";
+import { getAllTools, getReadOnlyTools, getSafeTools } from "sylas-core";
 import { LinearEventTransport } from "sylas-linear-event-transport";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
