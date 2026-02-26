@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as readline from "node:readline";
 import dotenv from "dotenv";
@@ -26,12 +26,17 @@ export class OnboardingService {
 			);
 
 			const envPath = join(this.app.sylasHome, ".env");
-			const envContent = [
-				`LINEAR_CLIENT_ID=${clientId}`,
-				`LINEAR_CLIENT_SECRET=${clientSecret}`,
-				`SYLAS_BASE_URL=${baseUrl}`,
-			].join("\n");
-			writeFileSync(envPath, `${envContent}\n`, "utf-8");
+			const existing = existsSync(envPath)
+				? readFileSync(envPath, "utf-8")
+				: "";
+			const parsed = dotenv.parse(existing);
+			parsed.LINEAR_CLIENT_ID = clientId;
+			parsed.LINEAR_CLIENT_SECRET = clientSecret;
+			parsed.SYLAS_BASE_URL = baseUrl;
+			const merged = Object.entries(parsed)
+				.map(([k, v]) => `${k}=${v}`)
+				.join("\n");
+			writeFileSync(envPath, `${merged}\n`, "utf-8");
 
 			dotenv.config({ path: envPath, override: true });
 

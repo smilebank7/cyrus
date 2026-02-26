@@ -31,8 +31,7 @@ export class StartCommand extends BaseCommand {
 				return;
 			}
 
-			const isFirstRun = !process.env.LINEAR_CLIENT_ID;
-			if (isFirstRun && repositories.length === 0) {
+			if (repositories.length === 0) {
 				const onboarding = new OnboardingService(this.app);
 				const success = await onboarding.run();
 				if (!success) {
