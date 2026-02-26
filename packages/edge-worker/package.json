@@ -40,21 +40,21 @@
 		"zod": "4.3.5"
 	},
 	"peerDependencies": {
-		"sylas-omc-runner": "workspace:*",
-		"sylas-omx-runner": "workspace:*",
-		"sylas-omo-runner": "workspace:*",
+		"sylas-claude-runner": "workspace:*",
+		"sylas-codex-runner": "workspace:*",
+		"sylas-opencode-runner": "workspace:*",
 		"sylas-gemini-runner": "workspace:*",
 		"sylas-cursor-runner": "workspace:*",
 		"sylas-simple-agent-runner": "workspace:*"
 	},
 	"peerDependenciesMeta": {
-		"sylas-omc-runner": {
+		"sylas-claude-runner": {
 			"optional": true
 		},
-		"sylas-omx-runner": {
+		"sylas-codex-runner": {
 			"optional": true
 		},
-		"sylas-omo-runner": {
+		"sylas-opencode-runner": {
 			"optional": true
 		},
 		"sylas-gemini-runner": {
